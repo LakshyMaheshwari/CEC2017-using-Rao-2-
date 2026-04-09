@@ -51,7 +51,6 @@ def plot_3d_surface(func_id, best_solution, lb, ub):
     
     save_path = f"{folder}/F{func_id}_3D.png"
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
-    plt.show()
     plt.close()
     
     print(f"Graph saved successfully at: {save_path}")
