@@ -3,25 +3,33 @@ import matplotlib.pyplot as plt
 import os
 from matplotlib import cm
 
-from functions.core import evaluate
-
 
 def plot_2d_contour(func_id, best_solution, lb, ub):
     # D = 2 is enforced for visualization
     D = 2
 
-    # 1. Higher resolution (100) is important to resolve the fine lines
-    # near the best solution, matching the target image.
-    x = np.linspace(lb, ub, 100) 
+    # ── Save and restore FES so visualization doesn't corrupt run stats ──
+    from functions.core import get_fes, fes_counter
+    fes_before = get_fes()
+
+    # 1. Build grid (resolution=100)
+    x = np.linspace(lb, ub, 100)
     y = np.linspace(lb, ub, 100)
     X, Y = np.meshgrid(x, y)
-    Z = np.zeros_like(X)
 
-    # 2. Compute function values using your existing evaluate logic
-    for i in range(len(X)):
-        for j in range(len(X[0])):
-            val, _ = evaluate([X[i][j], Y[i][j]], func_id)
-            Z[i][j] = val
+    # 2. Evaluate all points — uses the benchmark function directly,
+    # bypassing the FES counter to keep visualization free of side effects
+    func = __import__(
+        'functions.get_function', fromlist=['get_function']
+    ).get_function(func_id)["objective"]
+
+    # Vectorized evaluation for efficiency
+    points = np.column_stack([X.ravel(), Y.ravel()])
+    Z_flat = np.array([func(p) for p in points])
+    Z = Z_flat.reshape(X.shape)
+
+    # ── Restore FES counter ──
+    fes_counter.set(fes_before)
 
     # 3. Create the Plot
     fig = plt.figure(figsize=(8, 8)) # Square aspect ratio to match the image

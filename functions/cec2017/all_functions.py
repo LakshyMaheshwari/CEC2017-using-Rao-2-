@@ -5,7 +5,7 @@ Uses synthetic random transformations for F1-F30.
 
 import numpy as np
 from typing import Optional, List, Tuple, Callable
-from .synthetic_transforms import generate_rotation_matrix, generate_shift_vector
+from .data_loader import generate_rotation_matrix, generate_shift_vector, generate_shuffle_vector
 
 # ============================================================================
 # Basic Function Definitions (from cec2017.basic)
@@ -557,7 +557,7 @@ def f11(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if shift is None:
         shift = generate_shift_vector(11, nx)
     if shuffle is None:
-        shuffle = np.arange(nx)
+        shuffle = generate_shuffle_vector(11, nx)
     
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.2, 0.4, 0.4])
