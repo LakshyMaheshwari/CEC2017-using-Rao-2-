@@ -13,5 +13,6 @@ from . import algorithms
 from . import functions
 from . import utils
 from . import visualization
+from .results import save_results
 
-__all__ = ["algorithms", "functions", "utils", "visualization"]
+__all__ = ["algorithms", "functions", "utils", "visualization", "save_results"]

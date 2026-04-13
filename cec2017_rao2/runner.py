@@ -7,7 +7,7 @@ from .functions.core import evaluate, reset_fes, get_fes, get_optimal_value
 from .visualization.plot_convergence import plot_convergence
 from .visualization.plot_3d_surface import plot_3d_surface
 from .visualization.plot_2d_contour import plot_2d_contour
-from results.save_csv import save_results
+from .results import save_results
 from .config import FES_CHECKPOINTS
 
 

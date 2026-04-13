@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from cec2017_rao2.config import FES_CHECKPOINTS
+from .config import FES_CHECKPOINTS
 
 
 def save_results(func_id, dimension, error_matrix, stats, total_time):
