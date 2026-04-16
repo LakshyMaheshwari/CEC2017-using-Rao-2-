@@ -1,5 +1,7 @@
 DIMENSIONS = [2, 10, 20, 30]
 
+ALGORITHMS = ["rao1", "rao2", "rao3", "fisa"]
+
 POP_SIZE = 30
 MAX_FES_FACTOR = 10000    # max_fes = MAX_FES_FACTOR * dimension  (CEC2017 standard)
 RUNS = 51                 # CEC2017 official: 51 independent runs

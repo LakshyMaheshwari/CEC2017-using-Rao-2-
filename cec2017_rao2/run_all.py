@@ -1,6 +1,15 @@
-from .runner import run_experiment
-from .config import POP_SIZE, MAX_FES_FACTOR, RUNS, LOWER_BOUND, UPPER_BOUND
-from .summarize import build_summary
+import os
+import sys
+
+# Add parent directory to sys.path to allow running as a script from within the package
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+from cec2017_rao2.runner import run_experiment
+from cec2017_rao2.config import POP_SIZE, MAX_FES_FACTOR, RUNS, LOWER_BOUND, UPPER_BOUND
+from cec2017_rao2.summarize import build_summary
 
 
 def main():
@@ -17,7 +26,16 @@ def main():
         print(f" BEGINNING EVALUATION: FUNCTION F{func_id} ")
         print(f"{'='*60}")
 
+        # if 1 <= func_id <= 10:
+        #     dims_to_run = [2, 10, 20, 30, 50, 100]
+        # elif 21 <= func_id <= 28:
+        #     dims_to_run = [2, 10, 20, 30, 50, 100]
+        # else:
+        #     dims_to_run = [10, 20, 30, 50, 100]
+
         if 1 <= func_id <= 10:
+            dims_to_run = [2, 10]
+        elif 21 <= func_id <= 28:
             dims_to_run = [2, 10]
         else:
             dims_to_run = [10]

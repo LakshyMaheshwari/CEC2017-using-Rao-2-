@@ -11,11 +11,11 @@ def main():
         return
 
     if func_id == 29 or func_id == 30:
-        dims_to_run = [10]
+        dims_to_run = [10, 20, 30, 50, 100]
     elif 1 <= func_id <= 10 or 21 <= func_id <= 28:
-        dims_to_run = [2, 10]
+        dims_to_run = [2, 10, 20, 30, 50, 100]
     else:
-        dims_to_run = [10]
+        dims_to_run = [10, 20, 30, 50, 100]
 
     for dim in dims_to_run:
         max_fes = MAX_FES_FACTOR * dim

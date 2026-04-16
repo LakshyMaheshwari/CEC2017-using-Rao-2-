@@ -2,7 +2,10 @@ import numpy as np
 import random
 import time
 
+from .algorithms.rao1 import rao1
 from .algorithms.rao2 import rao2
+from .algorithms.rao3 import rao3
+from .algorithms.fisa import fisa
 from .functions.core import evaluate, reset_fes, get_fes, get_optimal_value
 from .visualization.plot_convergence import plot_convergence
 from .visualization.plot_3d_surface import plot_3d_surface
@@ -54,6 +57,7 @@ def run_experiment(func_id, dimension, lb, ub, pop_size, max_fes, runs):
     final_errors = []
     best_solution = None
     best_value = float("inf")
+    best_solutions = []          # Track best solutions for each run
 
     # ⏱️ Start timer
     start_time = time.time()
@@ -80,6 +84,7 @@ def run_experiment(func_id, dimension, lb, ub, pop_size, max_fes, runs):
         if f < best_value:
             best_value = f
             best_solution = best
+        best_solutions.append(best.copy())
 
         print(f"Run {run+1:02d} | Error: {error:.6e} | FES used: {fes_used}")
 
@@ -99,7 +104,7 @@ def run_experiment(func_id, dimension, lb, ub, pop_size, max_fes, runs):
         "Std": np.std(final_arr),
     }
 
-    save_results(func_id, dimension, error_matrix, stats, total_time)
+    save_results(func_id, dimension, error_matrix, stats, total_time, best_solution, best_solutions, runs)
     plot_convergence(all_histories, func_id, dimension, f_star)
 
     if dimension == 2:
