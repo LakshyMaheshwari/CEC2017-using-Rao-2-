@@ -12,13 +12,6 @@ Usage:
 import os
 import csv
 import re
-import sys
-
-# Add parent directory to sys.path to allow running as a script from within the package
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
 
 
 # Keys we recognise in result files (order matters for CSV columns)
@@ -61,22 +54,7 @@ def parse_result_file(filepath):
     return stats
 
 
-def parse_best_solution(filepath, dimension):
-    """Parse best solution file and return decision variables."""
-    try:
-        with open(filepath, "r") as f:
-            lines = f.readlines()
-            decision_vars = {}
-            for line in lines[1:]:
-                line = line.strip()
-                if line and '\t' in line:
-                    parts = line.split('\t')
-                    if len(parts) == 2 and parts[0].startswith('x'):
-                        var_name = parts[0]
-                        decision_vars[var_name] = float(parts[1])
-            return decision_vars
-    except FileNotFoundError:
-        return None
+
 
 
 def _discover_algorithms(results_dir):
