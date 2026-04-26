@@ -1,3 +1,6 @@
+from summarize import build_summary
+from config import POP_SIZE, MAX_FES_FACTOR, RUNS, LOWER_BOUND, UPPER_BOUND
+from runner import run_experiment
 import os
 import sys
 
@@ -6,10 +9,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
-
-from runner import run_experiment
-from config import POP_SIZE, MAX_FES_FACTOR, RUNS, LOWER_BOUND, UPPER_BOUND
-from summarize import build_summary
 
 
 def main():
@@ -39,7 +38,7 @@ def main():
         for dim in dims_to_run:
             max_fes = MAX_FES_FACTOR * dim
             print(f"\n[RUNNING] F{func_id} | D={dim} | MaxFES={max_fes} | Runs={RUNS}")
-            
+
             try:
                 run_experiment(
                     func_id,

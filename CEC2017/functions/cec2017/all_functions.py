@@ -8,12 +8,13 @@ import numpy as np
 from typing import Optional, List, Callable
 from .data_loader import (
     generate_rotation_matrix, generate_shift_vector, generate_shuffle_vector,
-    generate_rotation_matrices, generate_shift_vectors, generate_shuffle_vectors
+    generate_rotation_matrices, generate_shift_vectors
 )
 
 # ============================================================================
 # Basic Function Definitions (from cec2017.basic)
 # ============================================================================
+
 
 def bent_cigar(x: np.ndarray) -> np.ndarray:
     """Bent Cigar function (basic)"""
@@ -79,7 +80,7 @@ def lunacek_bi_rastrigin(
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if shift is None:
         shift = np.zeros((1, nx))
     else:
@@ -127,12 +128,12 @@ def non_cont_rastrigin(
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if shift is None:
         shift = np.zeros((1, nx))
     else:
         shift = np.expand_dims(shift, 0)
-    
+
     shifted = x - shift
     x = x.copy()
     mask = np.abs(shifted) > 0.5
@@ -249,7 +250,7 @@ def griewank(x: np.ndarray) -> np.ndarray:
     x = 6.0 * x
     factor = 1 / 4000
     d = np.expand_dims(np.arange(start=1, stop=nx + 1), 0)
-    cs = np.cos(x / d)
+    np.cos(x / d)
     sm = np.sum(factor * x * x, axis=1)
     pd = np.prod(np.cos(x / d), axis=1)
     return sm - pd + 1
@@ -353,13 +354,13 @@ def f1(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np.
     x = np.array(x)
     if x.ndim == 1:
         x = x.reshape(1, -1)
-    
+
     nx = x.shape[1]
     if rotation is None:
         rotation = generate_rotation_matrix(1, nx)
     if shift is None:
         shift = generate_shift_vector(1, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     return float(bent_cigar(x_transformed)[0] + 100.0)
 
@@ -375,13 +376,13 @@ def f3(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np.
     x = np.array(x)
     if x.ndim == 1:
         x = x.reshape(1, -1)
-    
+
     nx = x.shape[1]
     if rotation is None:
         rotation = generate_rotation_matrix(3, nx)
     if shift is None:
         shift = generate_shift_vector(3, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     return float(zakharov(x_transformed)[0] + 300.0)
 
@@ -391,13 +392,13 @@ def f4(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np.
     x = np.array(x)
     if x.ndim == 1:
         x = x.reshape(1, -1)
-    
+
     nx = x.shape[1]
     if rotation is None:
         rotation = generate_rotation_matrix(4, nx)
     if shift is None:
         shift = generate_shift_vector(4, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     return float(rosenbrock(x_transformed)[0] + 400.0)
 
@@ -407,13 +408,13 @@ def f5(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np.
     x = np.array(x)
     if x.ndim == 1:
         x = x.reshape(1, -1)
-    
+
     nx = x.shape[1]
     if rotation is None:
         rotation = generate_rotation_matrix(5, nx)
     if shift is None:
         shift = generate_shift_vector(5, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     return float(rastrigin(x_transformed)[0] + 500.0)
 
@@ -425,13 +426,13 @@ def f6(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np.
     x = np.array(x)
     if x.ndim == 1:
         x = x.reshape(1, -1)
-    
+
     nx = x.shape[1]
     if rotation is None:
         rotation = generate_rotation_matrix(6, nx)
     if shift is None:
         shift = generate_shift_vector(6, nx)
-    
+
     scaled = 0.5 * (x - np.expand_dims(shift, 0)) / 100.0
     x_transformed = np.matmul(np.expand_dims(rotation, 0), np.expand_dims(scaled, -1))[:, :, 0]
     return float(schaffers_f7(x_transformed)[0] + 600.0)
@@ -509,7 +510,7 @@ def f9(x: np.ndarray, rotation: Optional[np.ndarray] = None,
     # Scale → rotate → levy
     scaled = 5.12 * (x - np.expand_dims(shift, 0)) / 100.0
     x_transformed = np.matmul(np.expand_dims(rotation, 0),
-                               np.expand_dims(scaled, -1))[:, :, 0]
+                              np.expand_dims(scaled, -1))[:, :, 0]
     return float(levy(x_transformed)[0] + 900.0)
 
 
@@ -541,16 +542,17 @@ def f10(x: np.ndarray, rotation: Optional[np.ndarray] = None,
 # Hybrid Functions F11-F20
 # ============================================================================
 
+
 def shuffle_and_partition(x: np.ndarray, shuffle: np.ndarray, partitions: List[float]) -> List[np.ndarray]:
     """Shuffle and partition vector"""
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     xs = np.zeros_like(x)
     for i in range(nx):
         xs[:, i] = x[:, shuffle[i]]
-    
+
     parts = []
     start, end = 0, 0
     for p in partitions[:-1]:
@@ -561,24 +563,24 @@ def shuffle_and_partition(x: np.ndarray, shuffle: np.ndarray, partitions: List[f
     return parts
 
 
-def f11(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np.ndarray] = None, 
+def f11(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np.ndarray] = None,
         shuffle: Optional[np.ndarray] = None) -> float:
     """F11: Hybrid Function 1 (N=3)"""
     x = np.array(x)
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(11, nx)
     if shift is None:
         shift = generate_shift_vector(11, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(11, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.2, 0.4, 0.4])
-    
+
     y = zakharov(x_parts[0])[0]
     y += rosenbrock(x_parts[1])[0]
     y += rastrigin(x_parts[2])[0]
@@ -592,7 +594,7 @@ def f12(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if nx < 3:
         if rotation is None:
             rotation = generate_rotation_matrix(12, nx)
@@ -603,17 +605,17 @@ def f12(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
         y += modified_schwefel(x_transformed)[0]
         y += bent_cigar(x_transformed)[0]
         return float(y + 1200.0)
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(12, nx)
     if shift is None:
         shift = generate_shift_vector(12, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(12, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.3, 0.3, 0.4])
-    
+
     y = high_conditioned_elliptic(x_parts[0])[0]
     y += modified_schwefel(x_parts[1])[0]
     y += bent_cigar(x_parts[2])[0]
@@ -627,17 +629,17 @@ def f13(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(13, nx)
     if shift is None:
         shift = generate_shift_vector(13, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(13, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.3, 0.3, 0.4])
-    
+
     y = bent_cigar(x_parts[0])[0]
     y += rosenbrock(x_parts[1])[0]
     y += lunacek_bi_rastrigin(x_parts[2])[0]
@@ -651,7 +653,7 @@ def f14(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if nx < 4:
         if rotation is None:
             rotation = generate_rotation_matrix(14, nx)
@@ -663,17 +665,17 @@ def f14(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
         y += schaffers_f7(x_transformed)[0]
         y += rastrigin(x_transformed)[0]
         return float(y + 1400.0)
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(14, nx)
     if shift is None:
         shift = generate_shift_vector(14, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(14, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.2, 0.2, 0.2, 0.4])
-    
+
     y = high_conditioned_elliptic(x_parts[0])[0]
     y += ackley(x_parts[1])[0]
     y += schaffers_f7(x_parts[2])[0]
@@ -688,17 +690,17 @@ def f15(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(15, nx)
     if shift is None:
         shift = generate_shift_vector(15, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(15, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.2, 0.2, 0.3, 0.3])
-    
+
     y = bent_cigar(x_parts[0])[0]
     y += h_g_bat(x_parts[1])[0]
     y += rastrigin(x_parts[2])[0]
@@ -713,17 +715,17 @@ def f16(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(16, nx)
     if shift is None:
         shift = generate_shift_vector(16, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(16, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.2, 0.2, 0.3, 0.3])
-    
+
     y = expanded_schaffers_f6(x_parts[0])[0]
     y += h_g_bat(x_parts[1])[0]
     y += rosenbrock(x_parts[2])[0]
@@ -738,17 +740,17 @@ def f17(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(17, nx)
     if shift is None:
         shift = generate_shift_vector(17, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(17, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.1, 0.2, 0.2, 0.2, 0.3])
-    
+
     y = katsuura(x_parts[0])[0]
     y += ackley(x_parts[1])[0]
     y += expanded_griewanks_plus_rosenbrock(x_parts[2])[0]
@@ -777,17 +779,17 @@ def f18(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
         y += h_g_bat(x_transformed)[0]
         y += discus(x_transformed)[0]
         return float(y + 1800.0)
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(18, nx)
     if shift is None:
         shift = generate_shift_vector(18, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(18, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.2, 0.2, 0.2, 0.2, 0.2])
-    
+
     y = high_conditioned_elliptic(x_parts[0])[0]
     y += ackley(x_parts[1])[0]
     y += rastrigin(x_parts[2])[0]
@@ -803,17 +805,17 @@ def f19(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(19, nx)
     if shift is None:
         shift = generate_shift_vector(19, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(19, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.2, 0.2, 0.2, 0.2, 0.2])
-    
+
     y = bent_cigar(x_parts[0])[0]
     y += rastrigin(x_parts[1])[0]
     y += expanded_griewanks_plus_rosenbrock(x_parts[2])[0]
@@ -829,7 +831,7 @@ def f20(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     if nx < 6:
         if rotation is None:
             rotation = generate_rotation_matrix(20, nx)
@@ -843,17 +845,17 @@ def f20(x: np.ndarray, rotation: Optional[np.ndarray] = None, shift: Optional[np
         y += modified_schwefel(x_transformed)[0]
         y += schaffers_f7(x_transformed)[0]
         return float(y + 2000.0)
-    
+
     if rotation is None:
         rotation = generate_rotation_matrix(20, nx)
     if shift is None:
         shift = generate_shift_vector(20, nx)
     if shuffle is None:
         shuffle = generate_shuffle_vector(20, nx)
-    
+
     x_transformed = shift_rotate(x, shift, rotation)
     x_parts = shuffle_and_partition(x_transformed, shuffle, [0.1, 0.1, 0.2, 0.2, 0.2, 0.2])
-    
+
     y = happy_cat(x_parts[0])[0]
     y += katsuura(x_parts[1])[0]
     y += ackley(x_parts[2])[0]
@@ -880,29 +882,29 @@ def _calc_w(x: np.ndarray, sigma: float) -> np.ndarray:
 
 
 def _composition(x: np.ndarray, rotations: List[np.ndarray], shifts: List[np.ndarray],
-                funcs: List[Callable], sigmas: List[float], lambdas: List[float], 
-                biases: List[float]) -> np.ndarray:
+                 funcs: List[Callable], sigmas: List[float], lambdas: List[float],
+                 biases: List[float]) -> np.ndarray:
     """Generic composition function"""
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nv = x.shape[0]
     nx = x.shape[1]
     N = len(funcs)
-    
+
     vals = np.zeros((nv, N))
     w = np.zeros((nv, N))
-    
+
     for i in range(N):
         x_shifted = x - np.expand_dims(shifts[i][:nx], 0)
         x_t = shift_rotate(x, shifts[i][:nx], rotations[i])
         vals[:, i] = funcs[i](x_t)
         w[:, i] = _calc_w(x_shifted, sigmas[i])
-    
+
     w_sm = np.sum(w, axis=1)
     nz_mask = w_sm != 0.0
     w[nz_mask, :] /= w_sm[nz_mask, None]
     w[~nz_mask, :] = 1 / N
-    
+
     return np.sum(w * (lambdas * vals + biases), axis=1)
 
 
@@ -912,14 +914,14 @@ def f21(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     rotations = generate_rotation_matrices(21, nx, 3)
     shifts = generate_shift_vectors(21, nx, 3)
     funcs = [rosenbrock, high_conditioned_elliptic, rastrigin]
     sigmas = np.array([10.0, 20.0, 30.0])
     lambdas = np.array([1.0, 1.0e-6, 1.0])
     biases = np.array([0.0, 100.0, 200.0])
-    
+
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2100.0)
 
 
@@ -929,14 +931,14 @@ def f22(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     rotations = generate_rotation_matrices(22, nx, 3)
     shifts = generate_shift_vectors(22, nx, 3)
     funcs = [rastrigin, griewank, modified_schwefel]
     sigmas = np.array([10.0, 20.0, 30.0])
     lambdas = np.array([1.0, 10.0, 1.0])
     biases = np.array([0.0, 100.0, 200.0])
-    
+
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2200.0)
 
 
@@ -946,14 +948,14 @@ def f23(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     rotations = generate_rotation_matrices(23, nx, 4)
     shifts = generate_shift_vectors(23, nx, 4)
     funcs = [rosenbrock, ackley, modified_schwefel, rastrigin]
     sigmas = np.array([10.0, 20.0, 30.0, 40.0])
     lambdas = np.array([1.0, 10.0, 1.0, 1.0])
     biases = np.array([0.0, 100.0, 200.0, 300.0])
-    
+
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2300.0)
 
 
@@ -963,14 +965,14 @@ def f24(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     rotations = generate_rotation_matrices(24, nx, 4)
     shifts = generate_shift_vectors(24, nx, 4)
     funcs = [ackley, high_conditioned_elliptic, griewank, rastrigin]
     sigmas = np.array([10.0, 20.0, 30.0, 40.0])
     lambdas = np.array([1.0, 1.0e-6, 10.0, 1.0])
     biases = np.array([0.0, 100.0, 200.0, 300.0])
-    
+
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2400.0)
 
 
@@ -980,14 +982,14 @@ def f25(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     rotations = generate_rotation_matrices(25, nx, 5)
     shifts = generate_shift_vectors(25, nx, 5)
     funcs = [rastrigin, happy_cat, ackley, discus, rosenbrock]
     sigmas = np.array([10.0, 20.0, 30.0, 40.0, 50.0])
     lambdas = np.array([10.0, 1.0, 10.0, 1.0e-6, 1.0])
     biases = np.array([0.0, 100.0, 200.0, 300.0, 400.0])
-    
+
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2500.0)
 
 
@@ -997,14 +999,14 @@ def f26(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     rotations = generate_rotation_matrices(26, nx, 5)
     shifts = generate_shift_vectors(26, nx, 5)
     funcs = [expanded_schaffers_f6, modified_schwefel, griewank, rosenbrock, rastrigin]
     sigmas = np.array([10.0, 20.0, 20.0, 30.0, 40.0])
     lambdas = np.array([5.0e-4, 1.0, 10.0, 1.0, 10.0])
     biases = np.array([0.0, 100.0, 200.0, 300.0, 400.0])
-    
+
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2600.0)
 
 
@@ -1014,14 +1016,14 @@ def f27(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     rotations = generate_rotation_matrices(27, nx, 6)
     shifts = generate_shift_vectors(27, nx, 6)
     funcs = [h_g_bat, rastrigin, modified_schwefel, bent_cigar, high_conditioned_elliptic, expanded_schaffers_f6]
     sigmas = np.array([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])
     lambdas = np.array([10.0, 10.0, 2.5, 1.0e-26, 1.0e-6, 5.0e-4])
     biases = np.array([0.0, 100.0, 200.0, 300.0, 400.0, 500.0])
-    
+
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2700.0)
 
 
@@ -1031,19 +1033,20 @@ def f28(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
-    
+
     rotations = generate_rotation_matrices(28, nx, 6)
     shifts = generate_shift_vectors(28, nx, 6)
     funcs = [ackley, griewank, discus, rosenbrock, happy_cat, expanded_schaffers_f6]
     sigmas = np.array([10.0, 20.0, 30.0, 40.0, 50.0, 60.0])
     lambdas = np.array([10.0, 10.0, 1.0e-6, 1.0, 1.0, 5.0e-4])
     biases = np.array([0.0, 100.0, 200.0, 300.0, 400.0, 500.0])
-    
+
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2800.0)
 
 # ── Bare hybrid evaluators for use inside composition ─────────────────────
 # These receive already-transformed input from _composition.
 # They must NOT apply their own shift/rotation.
+
 
 def _hybrid5_bare(x: np.ndarray) -> float:
     """F15 (Hybrid 5) — no internal shift/rotation."""
@@ -1053,7 +1056,7 @@ def _hybrid5_bare(x: np.ndarray) -> float:
     nx = x.shape[1]
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.2, 0.2, 0.3, 0.3])
-    y  = bent_cigar(x_parts[0])[0]
+    y = bent_cigar(x_parts[0])[0]
     y += h_g_bat(x_parts[1])[0]
     y += rastrigin(x_parts[2])[0]
     y += rosenbrock(x_parts[3])[0]
@@ -1068,7 +1071,7 @@ def _hybrid6_bare(x: np.ndarray) -> float:
     nx = x.shape[1]
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.2, 0.2, 0.3, 0.3])
-    y  = expanded_schaffers_f6(x_parts[0])[0]
+    y = expanded_schaffers_f6(x_parts[0])[0]
     y += h_g_bat(x_parts[1])[0]
     y += rosenbrock(x_parts[2])[0]
     y += modified_schwefel(x_parts[3])[0]
@@ -1083,7 +1086,7 @@ def _hybrid7_bare(x: np.ndarray) -> float:
     nx = x.shape[1]
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.1, 0.2, 0.2, 0.2, 0.3])
-    y  = katsuura(x_parts[0])[0]
+    y = katsuura(x_parts[0])[0]
     y += ackley(x_parts[1])[0]
     y += expanded_griewanks_plus_rosenbrock(x_parts[2])[0]
     y += modified_schwefel(x_parts[3])[0]
@@ -1099,7 +1102,7 @@ def _hybrid8_bare(x: np.ndarray) -> float:
     nx = x.shape[1]
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.2, 0.2, 0.2, 0.2, 0.2])
-    y  = high_conditioned_elliptic(x_parts[0])[0]
+    y = high_conditioned_elliptic(x_parts[0])[0]
     y += ackley(x_parts[1])[0]
     y += rastrigin(x_parts[2])[0]
     y += h_g_bat(x_parts[3])[0]
@@ -1115,7 +1118,7 @@ def _hybrid9_bare(x: np.ndarray) -> float:
     nx = x.shape[1]
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.2, 0.2, 0.2, 0.2, 0.2])
-    y  = bent_cigar(x_parts[0])[0]
+    y = bent_cigar(x_parts[0])[0]
     y += rastrigin(x_parts[1])[0]
     y += expanded_griewanks_plus_rosenbrock(x_parts[2])[0]
     y += weierstrass(x_parts[3])[0]
@@ -1134,11 +1137,11 @@ def f29(x: np.ndarray) -> float:
     nx = x.shape[1]
 
     rotations = generate_rotation_matrices(29, nx, 3)
-    shifts    = generate_shift_vectors(29, nx, 3)
-    funcs     = [_hybrid5_bare, _hybrid8_bare, _hybrid9_bare]
-    sigmas    = np.array([10.0, 30.0, 50.0])
-    lambdas   = np.array([1.0,  1.0,  1.0])
-    biases    = np.array([0.0,  100.0, 200.0])
+    shifts = generate_shift_vectors(29, nx, 3)
+    funcs = [_hybrid5_bare, _hybrid8_bare, _hybrid9_bare]
+    sigmas = np.array([10.0, 30.0, 50.0])
+    lambdas = np.array([1.0,  1.0,  1.0])
+    biases = np.array([0.0,  100.0, 200.0])
 
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 2900.0)
 
@@ -1154,17 +1157,18 @@ def f30(x: np.ndarray) -> float:
     nx = x.shape[1]
 
     rotations = generate_rotation_matrices(30, nx, 3)
-    shifts    = generate_shift_vectors(30, nx, 3)
-    funcs     = [_hybrid5_bare, _hybrid6_bare, _hybrid7_bare]
-    sigmas    = np.array([10.0, 30.0, 50.0])
-    lambdas   = np.array([1.0,  1.0,  1.0])
-    biases    = np.array([0.0,  100.0, 200.0])
+    shifts = generate_shift_vectors(30, nx, 3)
+    funcs = [_hybrid5_bare, _hybrid6_bare, _hybrid7_bare]
+    sigmas = np.array([10.0, 30.0, 50.0])
+    lambdas = np.array([1.0,  1.0,  1.0])
+    biases = np.array([0.0,  100.0, 200.0])
 
     return float(_composition(x, rotations, shifts, funcs, sigmas, lambdas, biases)[0] + 3000.0)
 
 # ============================================================================
 # Complete Function Dictionary
 # ============================================================================
+
 
 ALL_FUNCTIONS = {
     1: {"objective": f1, "lb": -100, "ub": 100, "g": [], "h": []},

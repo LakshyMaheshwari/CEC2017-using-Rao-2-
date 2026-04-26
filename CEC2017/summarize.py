@@ -122,7 +122,7 @@ def build_summary():
 
     for func_id in range(1, 31):
         row = [f"F{func_id}"]
-        ideal_value = func_id * 100
+        func_id * 100
 
         for dim in dimensions:
             filepath = os.path.join(results_dir, f"F{func_id}", f"F{func_id}_D{dim}.txt")

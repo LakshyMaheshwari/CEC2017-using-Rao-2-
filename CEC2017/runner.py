@@ -21,7 +21,7 @@ def _extract_errors_at_checkpoints(history, max_fes, f_star):
     """
     checkpoint_fes = [frac * max_fes for frac in FES_CHECKPOINTS]
 
-    fes_arr = np.array([fes for fes, _   in history], dtype=float)
+    fes_arr = np.array([fes for fes, _ in history], dtype=float)
     fit_arr = np.array([fit for _,   fit in history], dtype=float)
 
     errors = []
@@ -44,6 +44,7 @@ def _extract_errors_at_checkpoints(history, max_fes, f_star):
         errors.append(error)
 
     return errors
+
 
 def run_experiment(func_id, dimension, lb, ub, pop_size, max_fes, runs):
 

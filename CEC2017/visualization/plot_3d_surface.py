@@ -41,9 +41,9 @@ def plot_3d_surface(func_id, best_solution, lb, ub, resolution=100):
 
     # ── Plot ──
     fig = plt.figure(figsize=(10, 8))
-    ax  = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection='3d')
 
-    surf = ax.plot_surface(
+    ax.plot_surface(
         X, Y, Z,
         cmap='jet',
         edgecolor='black',
@@ -70,7 +70,7 @@ def plot_3d_surface(func_id, best_solution, lb, ub, resolution=100):
     ax.set_zlim(offset_val, np.max(Z))
     ax.legend()
 
-    folder    = f"results/F{func_id}"
+    folder = f"results/F{func_id}"
     save_path = f"{folder}/F{func_id}_3D.png"
     os.makedirs(folder, exist_ok=True)
     plt.savefig(save_path, dpi=300, bbox_inches='tight')

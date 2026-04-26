@@ -12,6 +12,7 @@ class FESCounter:
     Safe for multiprocessing (each worker gets its own instance via
     module reimport or explicit passing).
     """
+
     def __init__(self):
         self._count = 0
 

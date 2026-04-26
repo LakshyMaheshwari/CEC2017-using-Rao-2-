@@ -1,7 +1,4 @@
-import numpy as np
 import os
-
-
 
 
 def save_results(func_id, dimension, error_matrix, stats, total_time, best_solution, best_solutions, runs):

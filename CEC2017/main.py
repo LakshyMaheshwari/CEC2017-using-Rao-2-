@@ -5,7 +5,7 @@ from config import POP_SIZE, MAX_FES_FACTOR, RUNS, LOWER_BOUND, UPPER_BOUND
 def main():
     print("Select Function (1–30): ")
     func_id = int(input())
-    
+
     if func_id < 1 or func_id > 30:
         print("Invalid function ID")
         return
