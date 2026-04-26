@@ -20,6 +20,6 @@ Median Error	8.372459e+01
 Mean Error	4.108102e+02
 Std Dev	9.612128e+02
 Std Error	1.345967e+02
-Time	29.06
+Time	26.94
 Ideal	1.000000e+02
 Runs	51

@@ -3,7 +3,7 @@ import numpy as np
 
 from utils.population import initialize_population
 from utils.bounds import apply_bounds
-from functions.core import get_fes, reset_fes
+from functions.core import evaluate, get_fes, reset_fes
 
 
 def rao2(pop_size, D, lb, ub, max_fes, func_id):

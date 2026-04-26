@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from matplotlib import cm
+
 
 from functions.core import get_fes, fes_counter
 from functions.get_function import get_function
