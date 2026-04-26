@@ -1,4 +1,5 @@
 import random
+from typing import Tuple, List
 import numpy as np
 
 from ..utils.population import initialize_population
@@ -6,7 +7,14 @@ from ..utils.bounds import apply_bounds
 from ..functions.core import evaluate, get_fes
 
 
-def fisa(pop_size, D, lb, ub, max_fes, func_id):
+def fisa(
+    pop_size: int,
+    D: int,
+    lb: float,
+    ub: float,
+    max_fes: int,
+    func_id: int,
+) -> Tuple[np.ndarray, List[Tuple[int, float]]]:
     """
     FISA — Fitness-based Individual-Step Algorithm.
 
@@ -23,12 +31,27 @@ def fisa(pop_size, D, lb, ub, max_fes, func_id):
                           -1 → current is better than partner (repel from  xj)
       r1, r2, r3:         independent uniform random vectors in [0,1]^D
 
-    Interface identical to rao2 / rao1 / rao3:
-        fisa(pop_size, D, lb, ub, max_fes, func_id)
-        → (running_best_vector, fitness_history)
+    Parameters
+    ----------
+    pop_size : int
+        Population size.
+    D : int
+        Problem dimension.
+    lb : float
+        Lower bound.
+    ub : float
+        Upper bound.
+    max_fes : int
+        Maximum function evaluations.
+    func_id : int
+        CEC2017 function ID (1–30, not 2).
 
-    fitness_history: list of (fes_count, running_best_fitness) tuples,
-                     one entry per candidate evaluation.
+    Returns
+    -------
+    Tuple[np.ndarray, List[Tuple[int, float]]]
+        (best_solution, fitness_history) where:
+        - best_solution: shape (D,)
+        - fitness_history: list of (fes_count, best_fitness) tuples
     """
 
     population = initialize_population(pop_size, D, lb, ub)

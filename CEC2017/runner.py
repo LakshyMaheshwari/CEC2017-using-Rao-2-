@@ -117,9 +117,56 @@ def _prepare_comparison_row(algo_name, func_id, dimension, final_arr, total_time
     }
 
 
-def run_experiment(algo_name, func_id, dimension, lb, ub, pop_size, max_fes, runs):
+def run_experiment(
+    algo_name: str,
+    func_id: int,
+    dimension: int,
+    lb: float,
+    ub: float,
+    pop_size: int,
+    max_fes: int,
+    runs: int,
+) -> None:
+    """Run optimization experiment with input validation."""
 
-    assert algo_name in ALGORITHMS, f"Unknown algorithm: {algo_name}"
+    # ── Input validation ──
+    if algo_name not in ALGORITHMS:
+        raise ValueError(
+            f"Unknown algorithm: {algo_name}. "
+            f"Choose from: {list(ALGORITHMS.keys())}"
+        )
+
+    if func_id not in range(1, 31) or func_id == 2:
+        import warnings
+        if func_id == 2:
+            warnings.warn(
+                f"F2 is deprecated in CEC2017. Results may be unreliable.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        elif func_id not in range(1, 31):
+            raise ValueError(
+                f"Function ID must be in [1, 30]. Got {func_id}"
+            )
+
+    if dimension not in [2, 10, 20, 30, 50, 100]:
+        import warnings
+        warnings.warn(
+            f"Dimension {dimension} is unusual. "
+            f"CEC2017 standard uses [2, 10, 20, 30, 50, 100]."
+        )
+
+    if pop_size < 2:
+        raise ValueError(f"Population size must be >= 2, got {pop_size}")
+
+    if max_fes < pop_size:
+        raise ValueError(
+            f"max_fes ({max_fes}) must be >= pop_size ({pop_size}). "
+            f"Otherwise, first generation cannot complete."
+        )
+
+    if runs < 1:
+        raise ValueError(f"runs must be >= 1, got {runs}")
 
     algorithm = ALGORITHMS[algo_name]
     f_star = get_optimal_value(func_id)

@@ -1,4 +1,5 @@
 import random
+from typing import Tuple, List
 import numpy as np
 
 from ..utils.population import initialize_population
@@ -6,7 +7,14 @@ from ..utils.bounds import apply_bounds
 from ..functions.core import evaluate, get_fes
 
 
-def rao2(pop_size, D, lb, ub, max_fes, func_id):
+def rao2(
+    pop_size: int,
+    D: int,
+    lb: float,
+    ub: float,
+    max_fes: int,
+    func_id: int,
+) -> Tuple[np.ndarray, List[Tuple[int, float]]]:
     """
     Rao-2 (Rao algorithm 2) metaheuristic optimization algorithm.
 
@@ -14,6 +22,28 @@ def rao2(pop_size, D, lb, ub, max_fes, func_id):
     termination criteria to comply with official benchmark constraints.
     Fitness values are cached locally to ensure a 1:1 FES-to-evaluation ratio 
     and prevent computational redundancy.
+
+    Parameters
+    ----------
+    pop_size : int
+        Population size.
+    D : int
+        Problem dimension.
+    lb : float
+        Lower bound.
+    ub : float
+        Upper bound.
+    max_fes : int
+        Maximum function evaluations.
+    func_id : int
+        CEC2017 function ID (1–30, not 2).
+
+    Returns
+    -------
+    Tuple[np.ndarray, List[Tuple[int, float]]]
+        (best_solution, fitness_history) where:
+        - best_solution: shape (D,)
+        - fitness_history: list of (fes_count, best_fitness) tuples
     """
 
     population = initialize_population(pop_size, D, lb, ub)

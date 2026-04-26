@@ -23,8 +23,6 @@ wheels/
 MANIFEST
 
 # PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
 
@@ -45,16 +43,20 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Data and Results
-results/F*/*.png
-results/F*/*.txt
-results/logs/
+# Generated results (large binary output — regenerate via run_all.py)
+results/
+CEC2017/results/
 
 # Environments
 .venv/
 env/
 venv/
 ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
 
 # OS files
 .DS_Store
