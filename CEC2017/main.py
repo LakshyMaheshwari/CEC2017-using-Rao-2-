@@ -1,35 +1,37 @@
-from CEC2017.runner import run_experiment
+import argparse
+
+from CEC2017.runner import run_experiment, write_comparison_csv
 from CEC2017.config import POP_SIZE, MAX_FES_FACTOR, RUNS, LOWER_BOUND, UPPER_BOUND
-
-
-ALGO_MAP = {
-    "1": "rao1",
-    "2": "rao2",
-    "3": "rao3",
-    "4": "fisa",
-}
+from CEC2017.algorithms import ALGORITHMS
 
 
 def _prompt_algorithm():
     """Display algorithm menu and return a list of algo_name strings."""
+    algo_list = list(ALGORITHMS.keys())
+
     while True:
         print("=" * 60)
         print("  CEC2017 Benchmark Suite")
         print("=" * 60)
         print("  Select algorithm:")
-        print("    1. RAO-1")
-        print("    2. RAO-2")
-        print("    3. RAO-3")
-        print("    4. FISA")
-        print("    5. Run ALL algorithms (sequential)")
-        choice = input("  Enter choice [1-5]: ").strip()
+        for i, algo in enumerate(algo_list, 1):
+            print(f"    {i}. {algo.upper()}")
+        print(f"    {len(algo_list) + 1}. Run ALL algorithms (sequential)")
 
-        if choice in ALGO_MAP:
-            return [ALGO_MAP[choice]]
-        elif choice == "5":
-            return list(ALGO_MAP.values())
+        choice = input(f"  Enter choice [1-{len(algo_list) + 1}]: ").strip()
+
+        try:
+            choice_num = int(choice)
+        except ValueError:
+            print(f"  ✗ Invalid input. Please enter 1-{len(algo_list) + 1}.\n")
+            continue
+
+        if 1 <= choice_num <= len(algo_list):
+            return [algo_list[choice_num - 1]]
+        elif choice_num == len(algo_list) + 1:
+            return algo_list
         else:
-            print(f"  ✗ Invalid choice '{choice}'. Please enter 1-5.\n")
+            print(f"  ✗ Out of range. Please enter 1-{len(algo_list) + 1}.\n")
 
 
 def _prompt_function():
@@ -47,8 +49,44 @@ def _prompt_function():
 
 
 def main():
-    algo_names = _prompt_algorithm()
-    func_id = _prompt_function()
+    parser = argparse.ArgumentParser(
+        description="CEC2017 Benchmark Suite",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python -m CEC2017.main                          # Interactive menu
+  python -m CEC2017.main --algo rao2 --func 1     # Run RAO-2 on F1
+  python -m CEC2017.main --all                    # Run all algos
+  python -m CEC2017.main --no-plots               # Skip visualization
+        """
+    )
+    parser.add_argument("--algo", choices=list(ALGORITHMS.keys()),
+                        help="Algorithm to run")
+    parser.add_argument("--func", type=int, choices=range(1, 31),
+                        help="Function ID", metavar="FUNC_ID")
+    parser.add_argument("--all", action="store_true",
+                        help="Run all algorithms")
+    parser.add_argument("--no-plots", action="store_true",
+                        help="Skip visualization")
+    parser.add_argument("--resume", action="store_true",
+                        help="Skip already-computed results")
+
+    args = parser.parse_args()
+
+    # Determine algorithms to run
+    if args.all:
+        algo_names = list(ALGORITHMS.keys())
+    elif args.algo:
+        algo_names = [args.algo]
+    else:
+        # Interactive mode
+        algo_names = _prompt_algorithm()
+
+    # Determine function ID
+    if args.func:
+        func_id = args.func
+    else:
+        func_id = _prompt_function()
 
     # Determine dimension list based on function ID
     if func_id in (29, 30):
@@ -58,22 +96,47 @@ def main():
     else:
         dims_to_run = [10, 20, 30, 50, 100]
 
-    for algo_name in algo_names:
-        for dim in dims_to_run:
-            max_fes = MAX_FES_FACTOR * dim
-            print(f"\n{'─' * 60}")
-            print(f"Running {algo_name.upper()} | F{func_id} | D={dim} | MaxFES={max_fes}")
-            print(f"{'─' * 60}")
-            run_experiment(
-                algo_name,
-                func_id,
-                dim,
-                LOWER_BOUND,
-                UPPER_BOUND,
-                POP_SIZE,
-                max_fes,
-                RUNS,
-            )
+    try:
+        for algo_name in algo_names:
+            for dim in dims_to_run:
+                max_fes = MAX_FES_FACTOR * dim
+
+                # FIX 8 (--resume): Skip already-computed results
+                if args.resume:
+                    import os
+                    result_file = f"results/{algo_name}/F{func_id}/{algo_name}_F{func_id}_D{dim}.txt"
+                    if os.path.exists(result_file):
+                        print(f"[SKIP] {algo_name.upper()} F{func_id} D{dim} already computed")
+                        continue
+
+                print(f"\n{'─' * 60}")
+                print(f"Running {algo_name.upper()} | F{func_id} | D={dim} | MaxFES={max_fes}")
+                print(f"{'─' * 60}")
+                run_experiment(
+                    algo_name,
+                    func_id,
+                    dim,
+                    LOWER_BOUND,
+                    UPPER_BOUND,
+                    POP_SIZE,
+                    max_fes,
+                    RUNS,
+                )
+    except KeyboardInterrupt:
+        print("\n\n  ⚠ Interrupted by user (Ctrl+C). Exiting cleanly.")
+        return
+
+    # FIX 5 (step 4): Write batch comparison CSV at the end
+    write_comparison_csv()
+    print("Comparison summary written to results/comparison_summary.csv")
+
+    # FIX 3: If user ran ALL algorithms, generate the summary CSV at the end
+    if len(algo_names) == len(list(ALGORITHMS.keys())):
+        print("\n" + "=" * 60)
+        print("  Generating final summary CSV...")
+        print("=" * 60)
+        from CEC2017.summarize import build_summary
+        build_summary()
 
 
 if __name__ == "__main__":

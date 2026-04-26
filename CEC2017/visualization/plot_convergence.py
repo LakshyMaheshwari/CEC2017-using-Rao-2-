@@ -31,8 +31,10 @@ def plot_convergence(all_histories, func_id, dimension, f_star, algo_name=None):
     for history in all_histories:
         fes_vals = [fes for fes, _ in history]
         fit_vals = [fit for _, fit in history]
-        # step interpolation (last known value)
-        interp_fit = np.interp(common_fes, fes_vals, fit_vals)
+        # Step interpolation (last-value-carried-forward) — NOT linear interp
+        idx = np.searchsorted(fes_vals, common_fes, side='right') - 1
+        idx = np.clip(idx, 0, len(fit_vals) - 1)
+        interp_fit = np.array([fit_vals[i] for i in idx])
         # convert to error
         interp_error = np.maximum(interp_fit - f_star, 0.0)
         interpolated.append(interp_error)

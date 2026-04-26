@@ -12,6 +12,10 @@ Usage:
 import os
 import csv
 import re
+import itertools
+
+import numpy as np
+from scipy.stats import ranksums
 
 
 # Keys we recognise in result files (order matters for CSV columns)
@@ -54,9 +58,6 @@ def parse_result_file(filepath):
     return stats
 
 
-
-
-
 def _discover_algorithms(results_dir):
     """Auto-detect algorithm subdirectories in the results folder."""
     algos = []
@@ -91,6 +92,64 @@ def _detect_dimensions(results_dir, algos):
                 if m:
                     dims.add(int(m.group(1)))
     return sorted(dims)
+
+
+def _add_wilcoxon_test(results_dir, algos):
+    """
+    Compute pairwise Wilcoxon rank-sum tests between all algorithm pairs.
+    Write results to: results/statistical_comparison.csv
+    """
+    stat_output = os.path.join(results_dir, "statistical_comparison.csv")
+
+    with open(stat_output, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Algo_A", "Algo_B", "p_value", "U_statistic",
+                          "Significant_05", "Winner"])
+
+        for algo_a, algo_b in itertools.combinations(algos, 2):
+            errors_a = []
+            errors_b = []
+
+            # Collect all mean errors for both algorithms
+            for func_id in range(1, 31):
+                if func_id == 2:
+                    continue
+
+                dims = [2, 10, 20, 30, 50, 100] if (1 <= func_id <= 10 or 21 <= func_id <= 28) \
+                       else [10, 20, 30, 50, 100]
+
+                for dim in dims:
+                    path_a = os.path.join(results_dir, algo_a, f"F{func_id}",
+                                          f"{algo_a}_F{func_id}_D{dim}.txt")
+                    path_b = os.path.join(results_dir, algo_b, f"F{func_id}",
+                                          f"{algo_b}_F{func_id}_D{dim}.txt")
+
+                    stats_a = parse_result_file(path_a)
+                    stats_b = parse_result_file(path_b)
+
+                    if stats_a and stats_b:
+                        try:
+                            err_a = float(stats_a.get("Mean Error", "nan"))
+                            err_b = float(stats_b.get("Mean Error", "nan"))
+                            if not np.isnan(err_a) and not np.isnan(err_b):
+                                errors_a.append(err_a)
+                                errors_b.append(err_b)
+                        except (ValueError, TypeError):
+                            pass
+
+            if len(errors_a) > 1 and len(errors_b) > 1:
+                u_stat, p_value = ranksums(errors_a, errors_b)
+                sig = "Yes" if p_value < 0.05 else "No"
+
+                # Winner is algo with lower mean error
+                mean_a = np.mean(errors_a)
+                mean_b = np.mean(errors_b)
+                winner = algo_a if mean_a < mean_b else algo_b
+
+                writer.writerow([algo_a, algo_b, f"{p_value:.6e}",
+                                 f"{u_stat:.6e}", sig, winner])
+
+    print(f"Statistical comparison saved to: {stat_output}")
 
 
 def build_summary():
@@ -133,7 +192,6 @@ def build_summary():
             row = [algo, f"F{func_id}"]
 
             for dim in dimensions:
-                # New path structure: results/{algo}/F{id}/{algo}_F{id}_D{dim}.txt
                 filepath = os.path.join(
                     results_dir, algo, f"F{func_id}",
                     f"{algo}_F{func_id}_D{dim}.txt"
@@ -196,6 +254,11 @@ def build_summary():
     print(f"Algorithms: {algos} | Functions: F1–F30 | Dimensions: {dimensions}")
     print(f"Total entries: {len(rows)}")
     print(f"Columns: {len(header)}")
+
+    # FIX 9: Pairwise Wilcoxon rank-sum tests
+    if len(algos) >= 2:
+        print("\nPerforming pairwise Wilcoxon rank-sum tests...")
+        _add_wilcoxon_test(results_dir, algos)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ algorithms on the CEC2017 test suite.
 
 __version__ = "0.1.1"
 __author__ = "Lakshya Maheshwari"
-__email__ = "your.email@example.com"  # Replace with your actual email
+__email__ = "lakshymaheshwari27@gmail.com"
 
 from . import algorithms
 from . import functions

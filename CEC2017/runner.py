@@ -15,6 +15,58 @@ from CEC2017.results import save_results
 from CEC2017.config import FES_CHECKPOINTS
 
 
+# ── Batch comparison CSV collection (FIX 5) ──
+_comparison_rows = []  # Collect rows across all run_experiment() calls
+
+
+def reset_comparison_rows():
+    """Reset the collection for a fresh batch."""
+    global _comparison_rows
+    _comparison_rows = []
+
+
+def add_comparison_row(row_dict):
+    """Add a single comparison row to the batch."""
+    global _comparison_rows
+    _comparison_rows.append(row_dict)
+
+
+def write_comparison_csv():
+    """Write all collected rows to CSV at once."""
+    global _comparison_rows
+    if not _comparison_rows:
+        return
+
+    csv_path = "results/comparison_summary.csv"
+    os.makedirs("results", exist_ok=True)
+
+    header = ["Algorithm", "FuncID", "Dimension", "Best_Error",
+              "Worst_Error", "Median_Error", "Mean_Error", "Std_Dev", "Time_s"]
+
+    # Read existing rows (if any)
+    existing_rows = []
+    if os.path.exists(csv_path):
+        with open(csv_path, "r", newline="") as f:
+            reader = csv.DictReader(f)
+            existing_rows = list(reader) if reader.fieldnames else []
+
+    # Merge: replace old rows with same key, keep new ones
+    keyed = {(r["Algorithm"], r["FuncID"], r["Dimension"]): r
+             for r in existing_rows}
+    for row in _comparison_rows:
+        key = (row["Algorithm"], row["FuncID"], row["Dimension"])
+        keyed[key] = row
+
+    # Write all
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=header)
+        writer.writeheader()
+        for key in sorted(keyed.keys()):
+            writer.writerow(keyed[key])
+
+    _comparison_rows = []  # Clear for next batch
+
+
 def _extract_errors_at_checkpoints(history, max_fes, f_star):
     """
     Given a history of (fes_count, best_fitness) tuples,
@@ -50,60 +102,19 @@ def _extract_errors_at_checkpoints(history, max_fes, f_star):
     return errors
 
 
-def _append_comparison_csv(algo_name, func_id, dimension, final_arr, total_time):
-    """
-    Upsert one summary row per (algo_name, func_id, dimension) into
-    results/comparison_summary.csv.  If a row with the same key already
-    exists it is replaced; otherwise the new row is appended.
-    """
-    csv_path = "results/comparison_summary.csv"
-    os.makedirs("results", exist_ok=True)
-
-    header = [
-        "Algorithm", "FuncID", "Dimension",
-        "Best_Error", "Worst_Error", "Median_Error",
-        "Mean_Error", "Std_Dev", "Time_s",
-    ]
-
-    new_row = [
-        algo_name,
-        func_id,
-        dimension,
-        f"{np.min(final_arr):.6e}",
-        f"{np.max(final_arr):.6e}",
-        f"{np.median(final_arr):.6e}",
-        f"{np.mean(final_arr):.6e}",
-        f"{np.std(final_arr):.6e}",
-        f"{total_time:.2f}",
-    ]
-
-    # Read existing rows (if any)
-    rows = []
-    if os.path.exists(csv_path):
-        with open(csv_path, "r", newline="") as f:
-            reader = csv.reader(f)
-            existing_header = next(reader, None)  # skip header
-            for row in reader:
-                if row:  # skip blank lines
-                    rows.append(row)
-
-    # Replace existing row with same (Algorithm, FuncID, Dimension) key,
-    # or append if no match found.
-    key = (str(algo_name), str(func_id), str(dimension))
-    replaced = False
-    for idx, row in enumerate(rows):
-        if len(row) >= 3 and (row[0], row[1], row[2]) == key:
-            rows[idx] = new_row
-            replaced = True
-            break
-    if not replaced:
-        rows.append(new_row)
-
-    # Write everything back
-    with open(csv_path, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(rows)
+def _prepare_comparison_row(algo_name, func_id, dimension, final_arr, total_time):
+    """Prepare (don't write) one CSV row for comparison summary."""
+    return {
+        "Algorithm": algo_name,
+        "FuncID": func_id,
+        "Dimension": dimension,
+        "Best_Error": f"{np.min(final_arr):.6e}",
+        "Worst_Error": f"{np.max(final_arr):.6e}",
+        "Median_Error": f"{np.median(final_arr):.6e}",
+        "Mean_Error": f"{np.mean(final_arr):.6e}",
+        "Std_Dev": f"{np.std(final_arr):.6e}",
+        "Time_s": f"{total_time:.2f}",
+    }
 
 
 def run_experiment(algo_name, func_id, dimension, lb, ub, pop_size, max_fes, runs):
@@ -123,7 +134,8 @@ def run_experiment(algo_name, func_id, dimension, lb, ub, pop_size, max_fes, run
     # ⏱️ Start timer
     start_time = time.time()
 
-    for run in tqdm(range(runs), desc=f"{algo_name.upper()} F{func_id} D{dimension}"):
+    pbar = tqdm(range(runs), desc=f"{algo_name.upper()} F{func_id} D{dimension}")
+    for run in pbar:
 
         random.seed(run)
         np.random.seed(run)
@@ -138,6 +150,9 @@ def run_experiment(algo_name, func_id, dimension, lb, ub, pop_size, max_fes, run
         # instead of calling evaluate() again (which would waste 1 FES)
         _, last_best_f = history[-1]
         error = max(last_best_f - f_star, 0.0)
+
+        # Update progress bar in-place (single clean line)
+        pbar.set_postfix(FES=fes_used, err=f"{error:.2e}")
 
         all_histories.append(history)
         checkpoint_errors = _extract_errors_at_checkpoints(history, max_fes, f_star)
@@ -176,8 +191,9 @@ def run_experiment(algo_name, func_id, dimension, lb, ub, pop_size, max_fes, run
         plot_3d_surface(func_id, best_solution, lb, ub, algo_name=algo_name)
         plot_2d_contour(func_id, best_solution, lb, ub, algo_name=algo_name)
 
-    # ── Append to cross-algorithm comparison CSV ──
-    _append_comparison_csv(algo_name, func_id, dimension, final_arr, total_time)
+    # ── Collect comparison row (batch write at end) — FIX 5 ──
+    row = _prepare_comparison_row(algo_name, func_id, dimension, final_arr, total_time)
+    add_comparison_row(row)
 
     print(f"\nF{func_id} | D={dimension} | MaxFES={max_fes} | Algorithm={algo_name.upper()}")
     print(f"Best Value: {stats['Best Value']:.6e}")

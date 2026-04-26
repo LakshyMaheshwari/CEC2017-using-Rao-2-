@@ -6,20 +6,50 @@ Usage:
     python -m CEC2017.run_all
 """
 
-
+import os
+import traceback
 
 from CEC2017.algorithms import ALGORITHMS
 from CEC2017.summarize import build_summary
 from CEC2017.config import POP_SIZE, MAX_FES_FACTOR, RUNS, LOWER_BOUND, UPPER_BOUND
-from CEC2017.runner import run_experiment
+from CEC2017.runner import run_experiment, write_comparison_csv
+
+
+def _prompt_algorithm():
+    """Prompt user to pick one or all algorithms for the full benchmark."""
+    algo_list = list(ALGORITHMS.keys())
+
+    while True:
+        print("=" * 60)
+        print("  CEC2017 — Run All Functions")
+        print("=" * 60)
+        print("  Select algorithm to benchmark:")
+        for i, algo in enumerate(algo_list, 1):
+            print(f"    {i}. {algo.upper()}")
+        print(f"    {len(algo_list) + 1}. ALL algorithms")
+
+        choice = input(f"  Enter choice [1-{len(algo_list) + 1}]: ").strip()
+
+        try:
+            choice_num = int(choice)
+        except ValueError:
+            print(f"  ✗ Invalid input. Please enter 1-{len(algo_list) + 1}.\n")
+            continue
+
+        if 1 <= choice_num <= len(algo_list):
+            return [algo_list[choice_num - 1]]
+        elif choice_num == len(algo_list) + 1:
+            return algo_list
+        else:
+            print(f"  ✗ Out of range. Please enter 1-{len(algo_list) + 1}.\n")
 
 
 def main():
     """
     Automated script to run all 30 CEC2017 functions
-    across all configured dimensions for every algorithm.
+    across all configured dimensions for the selected algorithm(s).
     """
-    algo_names = list(ALGORITHMS.keys())
+    algo_names = _prompt_algorithm()
 
     for algo_name in algo_names:
         print(f"\n{'#'*60}")
@@ -27,9 +57,6 @@ def main():
         print(f"{'#'*60}")
 
         for func_id in range(1, 31):
-            # F2 (Shifted and Rotated Schwefel's Function) is officially deprecated
-            # in the CEC2017 technical report. It was removed after the competition
-            # due to implementation inconsistencies across platforms. Skip it.
             if func_id == 2:
                 continue
 
@@ -37,37 +64,41 @@ def main():
             print(f" {algo_name.upper()} — FUNCTION F{func_id}")
             print(f"{'='*60}")
 
-            # CEC2017 official dimensions per function group:
-            # F1–F10, F21–F28 support D=2 as well as the standard set.
             if 1 <= func_id <= 10 or 21 <= func_id <= 28:
-                dims_to_run = [2, 10, 20, 30, 50, 100]
+                dims_to_run = [2, 10]
             else:
-                dims_to_run = [10, 20, 30, 50, 100]
+                dims_to_run = [10]
 
             for dim in dims_to_run:
+                # FIX 8: Skip already-computed results
+                result_file = f"results/{algo_name}/F{func_id}/{algo_name}_F{func_id}_D{dim}.txt"
+                if os.path.exists(result_file):
+                    print(f"[SKIP] {algo_name.upper()} F{func_id} D{dim} already computed")
+                    continue
+
                 max_fes = MAX_FES_FACTOR * dim
                 print(f"\n[RUNNING] {algo_name.upper()} F{func_id} | D={dim} | MaxFES={max_fes} | Runs={RUNS}")
 
                 try:
                     run_experiment(
-                        algo_name,
-                        func_id,
-                        dim,
-                        LOWER_BOUND,
-                        UPPER_BOUND,
-                        POP_SIZE,
-                        max_fes,
-                        RUNS,
+                        algo_name, func_id, dim,
+                        LOWER_BOUND, UPPER_BOUND,
+                        POP_SIZE, max_fes, RUNS,
                     )
                 except Exception as e:
-                    print(f"ERROR in {algo_name.upper()} F{func_id} D{dim}: {e}")
+                    # FIX 6: Full traceback
+                    print(f"ERROR in {algo_name.upper()} F{func_id} D{dim}:")
+                    traceback.print_exc()
                     continue
 
     print("\n\n" + "#"*60)
     print(" ALL ALGORITHMS × ALL FUNCTIONS COMPLETED")
     print("#"*60 + "\n")
 
-    # Automatically generate the summary CSV
+    # FIX 5: Write batch comparison CSV, then summary
+    write_comparison_csv()
+    print("Comparison summary written to results/comparison_summary.csv")
+
     print("Generating final summary CSV...")
     build_summary()
 
