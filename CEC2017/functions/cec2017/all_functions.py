@@ -6,7 +6,7 @@ Official CEC2017 benchmark functions implementation.
 
 import numpy as np
 from typing import Optional, List, Callable
-from functions.cec2017.data_loader import (
+from .data_loader import (
     generate_rotation_matrix, generate_shift_vector, generate_shuffle_vector,
     generate_rotation_matrices, generate_shift_vectors, generate_shuffle_vectors
 )

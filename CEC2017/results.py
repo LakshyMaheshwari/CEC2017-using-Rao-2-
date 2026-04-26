@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from config import FES_CHECKPOINTS
+
 
 
 def save_results(func_id, dimension, error_matrix, stats, total_time, best_solution, best_solutions, runs):

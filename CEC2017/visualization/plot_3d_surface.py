@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-from functions.core import evaluate, reset_fes, get_fes, fes_counter
+from functions.core import get_fes, fes_counter
 from functions.get_function import get_function
 
 

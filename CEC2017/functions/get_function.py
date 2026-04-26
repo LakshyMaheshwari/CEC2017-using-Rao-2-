@@ -1,5 +1,5 @@
 
-from functions.cec2017.all_functions import ALL_FUNCTIONS
+from .cec2017.all_functions import ALL_FUNCTIONS
 
 
 def get_function(func_id):
