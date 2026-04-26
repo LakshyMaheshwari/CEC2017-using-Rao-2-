@@ -19,6 +19,9 @@ def main():
     """
     # Loop through all 30 functions
     for func_id in range(1, 31):
+        # F2 (Shifted and Rotated Schwefel's Function) is officially deprecated
+        # in the CEC2017 technical report. It was removed after the competition
+        # due to implementation inconsistencies across platforms. Skip it.
         if func_id == 2:
             continue
 
@@ -26,19 +29,12 @@ def main():
         print(f" BEGINNING EVALUATION: FUNCTION F{func_id} ")
         print(f"{'='*60}")
 
-        # if 1 <= func_id <= 10:
-        #     dims_to_run = [2, 10, 20, 30, 50, 100]
-        # elif 21 <= func_id <= 28:
-        #     dims_to_run = [2, 10, 20, 30, 50, 100]
-        # else:
-        #     dims_to_run = [10, 20, 30, 50, 100]
-
-        if 1 <= func_id <= 10:
-            dims_to_run = [2, 10]
-        elif 21 <= func_id <= 28:
-            dims_to_run = [2, 10]
+        # CEC2017 official dimensions per function group:
+        # F1–F10, F21–F28 support D=2 as well as the standard set.
+        if 1 <= func_id <= 10 or 21 <= func_id <= 28:
+            dims_to_run = [2, 10, 20, 30, 50, 100]
         else:
-            dims_to_run = [10]
+            dims_to_run = [10, 20, 30, 50, 100]
 
         for dim in dims_to_run:
             max_fes = MAX_FES_FACTOR * dim

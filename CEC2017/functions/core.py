@@ -59,29 +59,17 @@ def get_optimal_value(func_id):
 
 def evaluate(x, func_id):
     """
-    Evaluate objective + constraints.
-    Increments FES counter by exactly 1.
+    Evaluate the objective function and increment the FES counter by 1.
+
+    Returns (objective_value, 0.0).
+    The second return value is always 0.0 because CEC2017 F1–F30 are
+    unconstrained problems (no inequality or equality constraints).
+    It is kept for API compatibility in case constrained functions are
+    added in the future.
     """
     fes_counter.increment()
 
     func = get_function(func_id)
-
-    # Objective
     obj = func["objective"](x)
 
-    # Constraints
-    violation = 0.0
-
-    # Inequality constraints g(x) <= 0
-    for g in func["g"]:
-        val = g(x)
-        if val > 0:
-            violation += val
-
-    # Equality constraints h(x) = 0
-    for h in func["h"]:
-        val = h(x)
-        if abs(val) > 1e-6:
-            violation += abs(val)
-
-    return obj, violation
+    return obj, 0.0
