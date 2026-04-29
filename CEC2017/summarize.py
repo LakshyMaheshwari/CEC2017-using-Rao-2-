@@ -1,6 +1,6 @@
 """
 Crawl results/ folder and build a single Big Summary CSV.
-Extracts Mean Error (and other stats) from every result .txt file.
+Extracts fitness stats (not error) from every result .txt file.
 
 Supports the multi-algorithm directory structure:
     results/{algo}/F{id}/{algo}_F{id}_D{dim}.txt
@@ -20,10 +20,12 @@ from scipy.stats import ranksums
 
 # Keys we recognise in result files (order matters for CSV columns)
 STAT_KEYS = {
+    "Best Fitness", "Mean Fitness", "Worst Fitness",
+    "Std Dev", "SEM", "Ideal", "Runs", "Max FES", "Iterations",
+    "Total Time", "Avg Time", "Success Rate",
+    # Legacy keys (from old error-based format) mapped during parsing
     "Best Value", "Best Error", "Worst Error", "Median Error",
-    "Mean Error", "Std Dev", "Std Error", "Time", "Ideal", "Runs",
-    # Legacy keys (from old output format) mapped during parsing
-    "Best", "Worst", "Median", "Mean", "Std", "StdError",
+    "Mean Error", "Std Error", "Time",
 }
 
 
@@ -34,24 +36,26 @@ def parse_result_file(filepath):
         with open(filepath, "r") as f:
             for line in f:
                 line = line.strip()
-                if not line:
+                if not line or line.startswith("Per-run") or line.startswith("Run "):
                     continue
                 parts = line.split("\t")
                 if len(parts) == 2 and parts[0] in STAT_KEYS:
                     key = parts[0]
                     # Normalise legacy keys to current names
-                    if key == "Best":
-                        key = "Best Error"
-                    elif key == "Worst":
-                        key = "Worst Error"
-                    elif key == "Median":
-                        key = "Median Error"
-                    elif key == "Mean":
-                        key = "Mean Error"
-                    elif key == "Std":
-                        key = "Std Dev"
-                    elif key == "StdError":
-                        key = "Std Error"
+                    if key == "Best Value":
+                        key = "Best Fitness"
+                    elif key == "Best Error":
+                        key = "Best Fitness"
+                    elif key == "Worst Error":
+                        key = "Worst Fitness"
+                    elif key == "Median Error":
+                        pass  # drop, not used in new format
+                    elif key == "Mean Error":
+                        key = "Mean Fitness"
+                    elif key == "Std Error":
+                        key = "SEM"
+                    elif key == "Time":
+                        key = "Avg Time"
                     stats[key] = parts[1]
     except FileNotFoundError:
         pass
@@ -66,8 +70,6 @@ def _discover_algorithms(results_dir):
     for entry in sorted(os.listdir(results_dir)):
         entry_path = os.path.join(results_dir, entry)
         if os.path.isdir(entry_path) and not entry.startswith(("F", ".", "_")):
-            # Subdirectories that don't start with F, '.', or '_' are algorithm dirs
-            # (e.g. rao1, rao2, rao3, fisa)
             algos.append(entry)
     return algos
 
@@ -107,10 +109,10 @@ def _add_wilcoxon_test(results_dir, algos):
                           "Significant_05", "Winner"])
 
         for algo_a, algo_b in itertools.combinations(algos, 2):
-            errors_a = []
-            errors_b = []
+            fitness_a = []
+            fitness_b = []
 
-            # Collect all mean errors for both algorithms
+            # Collect all mean fitness values for both algorithms
             for func_id in range(1, 31):
                 if func_id == 2:
                     continue
@@ -129,21 +131,21 @@ def _add_wilcoxon_test(results_dir, algos):
 
                     if stats_a and stats_b:
                         try:
-                            err_a = float(stats_a.get("Mean Error", "nan"))
-                            err_b = float(stats_b.get("Mean Error", "nan"))
-                            if not np.isnan(err_a) and not np.isnan(err_b):
-                                errors_a.append(err_a)
-                                errors_b.append(err_b)
+                            fit_a = float(stats_a.get("Mean Fitness", "nan"))
+                            fit_b = float(stats_b.get("Mean Fitness", "nan"))
+                            if not np.isnan(fit_a) and not np.isnan(fit_b):
+                                fitness_a.append(fit_a)
+                                fitness_b.append(fit_b)
                         except (ValueError, TypeError):
                             pass
 
-            if len(errors_a) > 1 and len(errors_b) > 1:
-                u_stat, p_value = ranksums(errors_a, errors_b)
+            if len(fitness_a) > 1 and len(fitness_b) > 1:
+                u_stat, p_value = ranksums(fitness_a, fitness_b)
                 sig = "Yes" if p_value < 0.05 else "No"
 
-                # Winner is algo with lower mean error
-                mean_a = np.mean(errors_a)
-                mean_b = np.mean(errors_b)
+                # Winner is algo with lower mean fitness (closer to ideal)
+                mean_a = np.mean(fitness_a)
+                mean_b = np.mean(fitness_b)
                 winner = algo_a if mean_a < mean_b else algo_b
 
                 writer.writerow([algo_a, algo_b, f"{p_value:.6e}",
@@ -177,12 +179,13 @@ def build_summary():
     for dim in dimensions:
         prefix = f"D{dim}_"
         header.extend([
-            f"{prefix}Best Value",
-            f"{prefix}Best Error",
-            f"{prefix}Worst Error",
-            f"{prefix}Mean Error",
+            f"{prefix}Ideal",
+            f"{prefix}Best Fitness",
+            f"{prefix}Mean Fitness",
+            f"{prefix}Worst Fitness",
             f"{prefix}Std Dev",
-            f"{prefix}Std Error",
+            f"{prefix}SEM",
+            f"{prefix}Success Rate",
         ])
 
     rows = []
@@ -199,47 +202,32 @@ def build_summary():
                 stats = parse_result_file(filepath)
 
                 if stats:
-                    try:
-                        best_value = float(stats.get("Best Value", "—"))
-                    except (ValueError, TypeError):
-                        best_value = "—"
+                    def _get(key):
+                        try:
+                            return float(stats.get(key, "—"))
+                        except (ValueError, TypeError):
+                            return "—"
 
-                    try:
-                        best_error = float(stats.get("Best Error", "—"))
-                    except (ValueError, TypeError):
-                        best_error = "—"
-
-                    try:
-                        worst_error = float(stats.get("Worst Error", "—"))
-                    except (ValueError, TypeError):
-                        worst_error = "—"
-
-                    try:
-                        mean_error = float(stats.get("Mean Error", "—"))
-                    except (ValueError, TypeError):
-                        mean_error = "—"
-
-                    try:
-                        std_dev = float(stats.get("Std Dev", "—"))
-                    except (ValueError, TypeError):
-                        std_dev = "—"
-
-                    try:
-                        std_error = float(stats.get("Std Error", "—"))
-                    except (ValueError, TypeError):
-                        std_error = "—"
+                    ideal = _get("Ideal")
+                    best = _get("Best Fitness")
+                    mean = _get("Mean Fitness")
+                    worst = _get("Worst Fitness")
+                    sd = _get("Std Dev")
+                    sem = _get("SEM")
+                    success = stats.get("Success Rate", "—")
 
                     row.extend([
-                        f"{best_value:.6e}" if isinstance(best_value, (int, float)) else best_value,
-                        f"{best_error:.6e}" if isinstance(best_error, (int, float)) else best_error,
-                        f"{worst_error:.6e}" if isinstance(worst_error, (int, float)) else worst_error,
-                        f"{mean_error:.6e}" if isinstance(mean_error, (int, float)) else mean_error,
-                        f"{std_dev:.6e}" if isinstance(std_dev, (int, float)) else std_dev,
-                        f"{std_error:.6e}" if isinstance(std_error, (int, float)) else std_error,
+                        f"{ideal:.6e}" if isinstance(ideal, (int, float)) else ideal,
+                        f"{best:.6e}" if isinstance(best, (int, float)) else best,
+                        f"{mean:.6e}" if isinstance(mean, (int, float)) else mean,
+                        f"{worst:.6e}" if isinstance(worst, (int, float)) else worst,
+                        f"{sd:.6e}" if isinstance(sd, (int, float)) else sd,
+                        f"{sem:.6e}" if isinstance(sem, (int, float)) else sem,
+                        f"{success}%" if success != "—" else "—",
                     ])
                 else:
                     # No results for this algo/function/dimension
-                    row.extend(["—"] * 6)
+                    row.extend(["—"] * 7)
 
             rows.append(row)
 
@@ -255,7 +243,7 @@ def build_summary():
     print(f"Total entries: {len(rows)}")
     print(f"Columns: {len(header)}")
 
-    # FIX 9: Pairwise Wilcoxon rank-sum tests
+    # Pairwise Wilcoxon rank-sum tests
     if len(algos) >= 2:
         print("\nPerforming pairwise Wilcoxon rank-sum tests...")
         _add_wilcoxon_test(results_dir, algos)

@@ -14,6 +14,7 @@ def fisa(
     ub: float,
     max_fes: int,
     func_id: int,
+    early_stop_value: float = None,
 ) -> Tuple[np.ndarray, List[Tuple[int, float]]]:
     """
     FISA — Fitness-based Individual-Step Algorithm.
@@ -67,6 +68,10 @@ def fisa(
 
     # ── Main Optimisation Loop ──
     while get_fes() < max_fes:
+
+        # Early-stop: if ideal value is reached, terminate
+        if early_stop_value is not None and running_best_f <= early_stop_value + 1e-8:
+            break
 
         best_idx  = int(np.argmin(fitness))
         worst_idx = int(np.argmax(fitness))

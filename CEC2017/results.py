@@ -1,15 +1,21 @@
 import os
+import numpy as np
+
+from CEC2017.config import MAX_ITERATIONS
 
 
-def save_results(func_id, dimension, error_matrix, stats, total_time, best_solution, best_solutions, runs, algo_name=None):
+def save_results(func_id, dimension, stats, total_time, run_times,
+                 best_solution, best_solutions, runs, max_fes,
+                 fes_used_list, algo_name=None):
     """
-    Save results in CEC2017 official .txt format with additional statistics.
+    Save results in a simplified fitness-based format.
 
-    error_matrix: numpy array of shape (14, runs) — error values at checkpoints
-    stats: dict with Best, Worst, Median, Mean, Std
+    stats: dict with Best Fitness, Mean Fitness, Worst Fitness, Std Dev, SEM, etc.
     best_solution: best solution vector found
     best_solutions: list of best solutions for each run
     runs: number of runs
+    max_fes: maximum function evaluations per run
+    fes_used_list: list of FES used per run
     """
     if algo_name:
         folder = f"results/{algo_name}/F{func_id}"
@@ -22,28 +28,24 @@ def save_results(func_id, dimension, error_matrix, stats, total_time, best_solut
     file_path = f"{folder}/{prefix}_D{dimension}.txt"
 
     with open(file_path, "w") as f:
-        # ── 14 × RUNS error matrix ──
-        rows, cols = error_matrix.shape
-        for i in range(rows):
-            row_vals = []
-            for j in range(cols):
-                row_vals.append(f"{error_matrix[i, j]:.6e}")
-            f.write("\t".join(row_vals) + "\n")
-
-        # ── Summary statistics ──
-        f.write("\n")
-        f.write(f"Best Value\t{stats['Best Value']:.6e}\n")
-        f.write(f"Best Error\t{stats['Best Error']:.6e}\n")
-        f.write(f"Worst Error\t{stats['Worst Error']:.6e}\n")
-        f.write(f"Median Error\t{stats['Median Error']:.6e}\n")
-        f.write(f"Mean Error\t{stats['Mean Error']:.6e}\n")
+        # ── Summary statistics (fitness-based) ──
+        f.write(f"Best Fitness\t{stats['Best Fitness']:.6e}\n")
+        f.write(f"Mean Fitness\t{stats['Mean Fitness']:.6e}\n")
+        f.write(f"Worst Fitness\t{stats['Worst Fitness']:.6e}\n")
         f.write(f"Std Dev\t{stats['Std Dev']:.6e}\n")
-        f.write(f"Std Error\t{stats['Std Error']:.6e}\n")
-        f.write(f"Time\t{total_time:.2f}\n")
-
-        # ── Additional statistics for summary generation ──
-        f.write(f"Ideal\t{func_id * 100:.6e}\n")
+        f.write(f"SEM\t{stats['SEM']:.6e}\n")
+        f.write(f"Ideal\t{stats['Ideal']:.6e}\n")
         f.write(f"Runs\t{runs}\n")
+        f.write(f"Max FES\t{max_fes}\n")
+        f.write(f"Iterations\t{MAX_ITERATIONS}\n")
+        f.write(f"Total Time\t{total_time:.2f}\n")
+        f.write(f"Avg Time\t{np.mean(run_times):.2f}\n")
+        f.write(f"Success Rate\t{stats['Success Rate']:.1f}\n")
+
+        # ── Per-run FES usage ──
+        f.write(f"\nPer-run FES used:\n")
+        for i, fes in enumerate(fes_used_list):
+            f.write(f"Run {i+1}\t{fes}\n")
 
     print(f"Results saved: {file_path}")
 

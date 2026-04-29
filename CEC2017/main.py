@@ -1,7 +1,7 @@
 import argparse
 
 from CEC2017.runner import run_experiment, write_comparison_csv
-from CEC2017.config import POP_SIZE, MAX_FES_FACTOR, RUNS, LOWER_BOUND, UPPER_BOUND
+from CEC2017.config import POP_SIZE, MAX_FES, RUNS, LOWER_BOUND, UPPER_BOUND
 from CEC2017.algorithms import ALGORITHMS
 
 
@@ -57,7 +57,7 @@ Examples:
   python -m CEC2017.main                          # Interactive menu
   python -m CEC2017.main --algo rao2 --func 1     # Run RAO-2 on F1
   python -m CEC2017.main --all                    # Run all algos
-  python -m CEC2017.main --no-plots               # Skip visualization
+  python -m CEC2017.main --runs 10 --max-fes 50000  # Custom params
         """
     )
     parser.add_argument("--algo", choices=list(ALGORITHMS.keys()),
@@ -70,6 +70,12 @@ Examples:
                         help="Skip visualization")
     parser.add_argument("--resume", action="store_true",
                         help="Skip already-computed results")
+    parser.add_argument("--runs", type=int, default=RUNS,
+                        help=f"Number of independent runs (default: {RUNS})")
+    parser.add_argument("--max-fes", type=int, default=MAX_FES,
+                        help=f"Max function evaluations per run (default: {MAX_FES})")
+    parser.add_argument("--pop-size", type=int, default=POP_SIZE,
+                        help=f"Population size (default: {POP_SIZE})")
 
     args = parser.parse_args()
 
@@ -99,9 +105,8 @@ Examples:
     try:
         for algo_name in algo_names:
             for dim in dims_to_run:
-                max_fes = MAX_FES_FACTOR * dim
 
-                # FIX 8 (--resume): Skip already-computed results
+                # --resume: Skip already-computed results
                 if args.resume:
                     import os
                     result_file = f"results/{algo_name}/F{func_id}/{algo_name}_F{func_id}_D{dim}.txt"
@@ -110,7 +115,7 @@ Examples:
                         continue
 
                 print(f"\n{'─' * 60}")
-                print(f"Running {algo_name.upper()} | F{func_id} | D={dim} | MaxFES={max_fes}")
+                print(f"Running {algo_name.upper()} | F{func_id} | D={dim} | MaxFES={args.max_fes} | Runs={args.runs}")
                 print(f"{'─' * 60}")
                 run_experiment(
                     algo_name,
@@ -118,19 +123,19 @@ Examples:
                     dim,
                     LOWER_BOUND,
                     UPPER_BOUND,
-                    POP_SIZE,
-                    max_fes,
-                    RUNS,
+                    args.pop_size,
+                    args.max_fes,
+                    args.runs,
                 )
     except KeyboardInterrupt:
         print("\n\n  ⚠ Interrupted by user (Ctrl+C). Exiting cleanly.")
         return
 
-    # FIX 5 (step 4): Write batch comparison CSV at the end
+    # Write batch comparison CSV at the end
     write_comparison_csv()
     print("Comparison summary written to results/comparison_summary.csv")
 
-    # FIX 3: If user ran ALL algorithms, generate the summary CSV at the end
+    # If user ran ALL algorithms, generate the summary CSV at the end
     if len(algo_names) == len(list(ALGORITHMS.keys())):
         print("\n" + "=" * 60)
         print("  Generating final summary CSV...")

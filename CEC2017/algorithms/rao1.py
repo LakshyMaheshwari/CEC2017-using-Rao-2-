@@ -13,6 +13,7 @@ def rao1(
     ub: float,
     max_fes: int,
     func_id: int,
+    early_stop_value: float = None,
 ) -> Tuple[np.ndarray, List[Tuple[int, float]]]:
     """
     Rao-1 (Rao algorithm 1) metaheuristic optimization algorithm.
@@ -62,6 +63,10 @@ def rao1(
 
     # ── Main Optimization Loop ──
     while get_fes() < max_fes:
+
+        # Early-stop: if ideal value is reached, terminate
+        if early_stop_value is not None and running_best_f <= early_stop_value + 1e-8:
+            break
 
         # ── Global Optimization State Extraction ──
         # Extract the globally best and worst performing solutions from the 
