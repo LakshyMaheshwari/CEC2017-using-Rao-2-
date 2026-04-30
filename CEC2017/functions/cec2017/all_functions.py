@@ -876,7 +876,9 @@ def _calc_w(x: np.ndarray, sigma: float) -> np.ndarray:
     nx = x.shape[1]
     w = np.sum(x * x, axis=1)
     nzmask = w != 0
-    w[nzmask] = ((1.0 / w) ** 0.5)[nzmask] * np.exp(-w / (2.0 * nx * sigma * sigma))[nzmask]
+    # Compute only on non-zero elements to avoid divide-by-zero
+    w_nz = w[nzmask]
+    w[nzmask] = (1.0 / w_nz) ** 0.5 * np.exp(-w_nz / (2.0 * nx * sigma * sigma))
     w[~nzmask] = float('inf')
     return w
 
@@ -901,9 +903,23 @@ def _composition(x: np.ndarray, rotations: List[np.ndarray], shifts: List[np.nda
         w[:, i] = _calc_w(x_shifted, sigmas[i])
 
     w_sm = np.sum(w, axis=1)
-    nz_mask = w_sm != 0.0
-    w[nz_mask, :] /= w_sm[nz_mask, None]
-    w[~nz_mask, :] = 1 / N
+    # Handle rows where any weight is inf (x landed exactly on a shift vector)
+    has_inf = np.any(np.isinf(w), axis=1)
+    finite_mask = ~has_inf & (w_sm != 0.0)
+
+    # Normal case: finite weights, normalize
+    w[finite_mask, :] /= w_sm[finite_mask, None]
+
+    # Inf case: set inf entries to 1, others to 0, then normalize
+    for i in np.where(has_inf)[0]:
+        inf_cols = np.isinf(w[i, :])
+        n_inf = np.sum(inf_cols)
+        w[i, :] = 0.0
+        w[i, inf_cols] = 1.0 / n_inf
+
+    # Zero case: equal weights
+    zero_mask = ~has_inf & (w_sm == 0.0)
+    w[zero_mask, :] = 1 / N
 
     return np.sum(w * (lambdas * vals + biases), axis=1)
 
@@ -1054,6 +1070,15 @@ def _hybrid5_bare(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
+
+    # Small-dimension fallback: can't partition into 4 non-empty parts
+    if nx < 4:
+        y = bent_cigar(x)[0]
+        y += h_g_bat(x)[0]
+        y += rastrigin(x)[0]
+        y += rosenbrock(x)[0]
+        return float(y)
+
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.2, 0.2, 0.3, 0.3])
     y = bent_cigar(x_parts[0])[0]
@@ -1069,6 +1094,15 @@ def _hybrid6_bare(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
+
+    # Small-dimension fallback: can't partition into 4 non-empty parts
+    if nx < 4:
+        y = expanded_schaffers_f6(x)[0]
+        y += h_g_bat(x)[0]
+        y += rosenbrock(x)[0]
+        y += modified_schwefel(x)[0]
+        return float(y)
+
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.2, 0.2, 0.3, 0.3])
     y = expanded_schaffers_f6(x_parts[0])[0]
@@ -1084,6 +1118,16 @@ def _hybrid7_bare(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
+
+    # Small-dimension fallback: can't partition into 5 non-empty parts
+    if nx < 5:
+        y = katsuura(x)[0]
+        y += ackley(x)[0]
+        y += expanded_griewanks_plus_rosenbrock(x)[0]
+        y += modified_schwefel(x)[0]
+        y += rastrigin(x)[0]
+        return float(y)
+
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.1, 0.2, 0.2, 0.2, 0.3])
     y = katsuura(x_parts[0])[0]
@@ -1100,6 +1144,16 @@ def _hybrid8_bare(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
+
+    # Small-dimension fallback: can't partition into 5 non-empty parts
+    if nx < 5:
+        y = high_conditioned_elliptic(x)[0]
+        y += ackley(x)[0]
+        y += rastrigin(x)[0]
+        y += h_g_bat(x)[0]
+        y += discus(x)[0]
+        return float(y)
+
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.2, 0.2, 0.2, 0.2, 0.2])
     y = high_conditioned_elliptic(x_parts[0])[0]
@@ -1116,6 +1170,16 @@ def _hybrid9_bare(x: np.ndarray) -> float:
     if x.ndim == 1:
         x = x.reshape(1, -1)
     nx = x.shape[1]
+
+    # Small-dimension fallback: can't partition into 5 non-empty parts
+    if nx < 5:
+        y = bent_cigar(x)[0]
+        y += rastrigin(x)[0]
+        y += expanded_griewanks_plus_rosenbrock(x)[0]
+        y += weierstrass(x)[0]
+        y += expanded_schaffers_f6(x)[0]
+        return float(y)
+
     shuffle = np.arange(nx)
     x_parts = shuffle_and_partition(x, shuffle, [0.2, 0.2, 0.2, 0.2, 0.2])
     y = bent_cigar(x_parts[0])[0]

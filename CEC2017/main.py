@@ -96,7 +96,7 @@ Examples:
 
     # Determine dimension list based on function ID
     if func_id in (29, 30):
-        dims_to_run = [10, 20, 30, 50, 100]
+        dims_to_run = [2, 10, 20, 30, 50, 100]
     elif 1 <= func_id <= 10 or 21 <= func_id <= 28:
         dims_to_run = [2, 10, 20, 30, 50, 100]
     else:

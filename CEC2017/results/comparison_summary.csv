@@ -1,6 +1,1 @@
-Algorithm,FuncID,Dimension,Best_Error,Worst_Error,Median_Error,Mean_Error,Std_Dev,Time_s
-rao1,1,2,8.672188e-01,1.536229e+02,2.615367e+01,3.618965e+01,3.517415e+01,29.66
-rao2,1,2,6.591141e-01,5.516926e+03,8.372459e+01,4.108102e+02,9.612128e+02,31.24
-rao3,1,2,5.553562e+00,5.519047e+03,1.135217e+02,3.936382e+02,8.671603e+02,37.19
-rao1,1,2,8.672188e-01,1.536229e+02,2.615367e+01,3.618965e+01,3.517415e+01,27.08
-fisa,1,2,1.530049e-01,5.516926e+03,3.787611e+01,2.751173e+02,1.061335e+03,28.02
+Algorithm,FuncID,Dimension,Ideal,Best_Fitness,Mean_Fitness,Worst_Fitness,Std_Dev,SEM,Avg_Time_s,Runs,Max_FES,Success_Rate
