@@ -17,8 +17,8 @@ This repository provides a highly-optimized, mathematically rigorous Python impl
 Designed for researchers and practitioners, this framework abandons black-box dependencies in favor of **1-to-1 mathematical parity** with the original competition C source codes. It comes pre-packaged with four state-of-the-art parameter-less metaheuristics (**Rao-1, Rao-2, Rao-3, and FISA**) and features heavily accelerated multiprocessing execution.
 
 <div align="center">
-  <img src="CEC2013/results/rao2/F1/rao2_F1_3D.png" width="45%" alt="3D Surface of Sphere Function">
-  <img src="CEC2013/results/rao2/F1/rao2_convergence_D2.png" width="45%" alt="Convergence Graph">
+  <img src="assets/rao2_F1_3D.png" width="45%" alt="3D Surface of Sphere Function">
+  <img src="assets/rao2_convergence_D2.png" width="45%" alt="Convergence Graph">
   <p><i>Left: 3D Mapping of CEC Benchmark Terrain. Right: Algorithm Convergence Tracking.</i></p>
 </div>
 
@@ -50,8 +50,8 @@ The framework is strictly script-based, keeping the workspace transparent and fr
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/LakshyMaheshwari/CEC2017-using-Rao-2-.git
-cd CEC2017-using-Rao-2-
+git clone https://github.com/LakshyMaheshwari/CEC13-CEC17.git
+cd CEC13-CEC17
 ```
 
 ### 2. Install Requirements
@@ -136,7 +136,7 @@ If you utilize this highly-audited framework in your academic research or papers
 @software{cec_benchmark_rao,
   author = {Lakshya Maheshwari},
   title = {Unified CEC2013 & CEC2017 Benchmark Optimization Suite},
-  url = {https://github.com/LakshyMaheshwari/CEC2017-using-Rao-2-},
+  url = {https://github.com/LakshyMaheshwari/CEC13-CEC17},
   year = {2026},
   note = {Features mathematically verified 1-to-1 C parity.}
 }
