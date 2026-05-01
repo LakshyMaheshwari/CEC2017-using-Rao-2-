@@ -387,8 +387,9 @@ def cf02(x, nx, OShift, M, rotate):
     delta = [20, 20, 20]
     bias  = [0, 100, 200]
     fit = np.zeros(cf_num)
+    I = np.eye(nx)
     for i in range(cf_num):
-        fit[i] = schwefel_func(x, OShift[i], M[i*2], M[i*2+1])  # note: needs two matrices
+        fit[i] = schwefel_func(x, OShift[i], I, I)  # UN-rotated
     return cf_cal(x, nx, OShift[:cf_num], delta, bias, fit, cf_num)
 
 def cf03(x, nx, OShift, M, rotate):
@@ -470,7 +471,8 @@ def _evaluate_point(x, func_num, nx, M, OShift):
     elif func_num == 4:
         return discus_func(x, OShift[3], M[3]) - 1100.0
     elif func_num == 5:
-        return dif_powers_func(x, OShift[4], M[4]) - 1000.0
+        I = np.eye(nx)
+        return dif_powers_func(x, OShift[4], I) - 1000.0
     elif func_num == 6:
         return rosenbrock_func(x, OShift[5], M[5]) - 900.0
     elif func_num == 7:
@@ -498,7 +500,8 @@ def _evaluate_point(x, func_num, nx, M, OShift):
     elif func_num == 16:
         return katsuura_func(x, OShift[5], M[5], M[6]) + 200.0
     elif func_num == 17:
-        return bi_rastrigin_func(x, OShift[6], M[6], M[7]) + 300.0
+        I = np.eye(nx)
+        return bi_rastrigin_func(x, OShift[6], I, I) + 300.0
     elif func_num == 18:
         return bi_rastrigin_func(x, OShift[7], M[7], M[8]) + 400.0
     elif func_num == 19:

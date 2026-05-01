@@ -56,8 +56,6 @@ def main():
         print(f"{'#'*60}")
 
         for func_id in range(1, 29):
-            if func_id == 2:
-                continue
 
             # Skip already-computed results
             result_file = f"results/{algo_name}/F{func_id}/{algo_name}_F{func_id}_D{dim}.txt"
