@@ -46,6 +46,10 @@ coverage.xml
 # Generated results (large binary output — regenerate via run_all.py)
 results/
 CEC2017/results/
+CEC2013/results/
+
+# CEC2013 — kept local only, not published
+CEC2013/
 
 # Environments
 .venv/

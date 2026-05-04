@@ -64,10 +64,12 @@ def main():
             print(f" {algo_name.upper()} — FUNCTION F{func_id}")
             print(f"{'='*60}")
 
-            if 1 <= func_id <= 10 or 21 <= func_id <= 28:
-                dims_to_run = [2, 10]
-            else:
+            if 11 <= func_id <= 20:
+                # Hybrid functions require D >= 10
                 dims_to_run = [10]
+            else:
+                # Unimodal (F1,F3-F10), multimodal (F21-F28), composition (F29-F30)
+                dims_to_run = [2, 10]
 
             for dim in dims_to_run:
                 # Skip already-computed results

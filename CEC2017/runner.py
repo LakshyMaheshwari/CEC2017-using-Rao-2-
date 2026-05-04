@@ -1,5 +1,6 @@
 import os
 import csv
+import sys
 import numpy as np
 import random
 import time
@@ -175,6 +176,129 @@ def _prepare_comparison_row(algo_name, func_id, dimension, final_fitness_arr,
     }
 
 
+# ── Per-run detailed CSV ──
+
+def save_per_run_csv(algo_name, func_id, dimension, results_list):
+    """
+    Save a CSV with one row per run containing:
+    Run, x1, x2, ..., xD, F(x), FES_Used, Time(s), Success
+
+    Path: results/{algo}/F{id}/{algo}_F{id}_D{dim}_all_runs.csv
+    """
+    if algo_name:
+        folder = f"results/{algo_name}/F{func_id}"
+        prefix = f"{algo_name}_F{func_id}"
+    else:
+        folder = f"results/F{func_id}"
+        prefix = f"F{func_id}"
+    os.makedirs(folder, exist_ok=True)
+
+    csv_path = f"{folder}/{prefix}_D{dimension}_all_runs.csv"
+
+    D = len(results_list[0]["best"])
+    header = ["Run"] + [f"x{i+1}" for i in range(D)] + ["F(x)", "FES_Used", "Time(s)", "Success"]
+
+    try:
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(header)
+            for r in results_list:
+                row = [r["run_id"] + 1]                         # 1-indexed run number
+                row += [f"{v:.10e}" for v in r["best"]]         # decision variables
+                row.append(f"{r['last_best_f']:.10e}")          # F(x)
+                row.append(r["fes_used"])                       # FES used
+                row.append(f"{r['run_time']:.4f}")              # time in seconds
+                row.append(r["success"])                        # success flag
+                writer.writerow(row)
+        print(f"Per-run CSV saved: {csv_path}")
+    except PermissionError:
+        print(f"\n[WARNING] Permission denied to write {csv_path}. Is it open in Excel?")
+
+
+def save_convergence_csv(algo_name, func_id, dimension, results_list):
+    """
+    Save the complete convergence history for every run.
+    Each row = one recorded iteration from one run.
+
+    Columns: Run, FES, Best_F(x)
+    Path: results/{algo}/F{id}/{algo}_F{id}_D{dim}_convergence.csv
+    """
+    if algo_name:
+        folder = f"results/{algo_name}/F{func_id}"
+        prefix = f"{algo_name}_F{func_id}"
+    else:
+        folder = f"results/F{func_id}"
+        prefix = f"F{func_id}"
+    os.makedirs(folder, exist_ok=True)
+
+    csv_path = f"{folder}/{prefix}_D{dimension}_convergence.csv"
+
+    try:
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Run", "FES", "Best_F(x)"])
+            for r in results_list:
+                run_num = r["run_id"] + 1
+                for fes, best_f in r["history"]:
+                    writer.writerow([run_num, fes, f"{best_f:.10e}"])
+        print(f"Convergence CSV saved: {csv_path}")
+    except PermissionError:
+        print(f"\n[WARNING] Permission denied to write {csv_path}. Is it open in Excel?")
+
+
+def append_to_master_summary_csv(algo_name, func_id, dimension, best_solution, best_fitness, f_star):
+    """
+    Append one row (best solution for this function) to a master cross-function
+    summary CSV. One file per algo+dimension, accumulates across all functions.
+
+    Columns: Function, x1, x2, ..., xD, F(x), Ideal
+    Path: results/{algo}/master_summary_{algo}_D{dim}.csv
+    """
+    folder = f"results/{algo_name}" if algo_name else "results"
+    os.makedirs(folder, exist_ok=True)
+    prefix = algo_name if algo_name else "results"
+    csv_path = f"{folder}/master_summary_{prefix}_D{dimension}.csv"
+
+    D = len(best_solution)
+    header = ["Function"] + [f"x{i+1}" for i in range(D)] + ["F(x)", "Ideal"]
+
+    # Read existing rows, replace if same function already present
+    existing_rows = []
+    if os.path.exists(csv_path):
+        try:
+            with open(csv_path, "r", newline="") as f:
+                reader = csv.DictReader(f)
+                if reader.fieldnames:
+                    existing_rows = [r for r in reader if r.get("Function") != f"F{func_id}"]
+        except Exception:
+            existing_rows = []
+
+    new_row = {"Function": f"F{func_id}"}
+    for i, v in enumerate(best_solution):
+        new_row[f"x{i+1}"] = f"{v:.10e}"
+    new_row["F(x)"] = f"{best_fitness:.10e}"
+    new_row["Ideal"] = f"{f_star:.10e}"
+
+    all_rows = existing_rows + [new_row]
+
+    # Sort by function number
+    def _sort_key(r):
+        try:
+            return int(r["Function"].replace("F", ""))
+        except (ValueError, KeyError):
+            return 999
+    all_rows.sort(key=_sort_key)
+
+    try:
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=header)
+            writer.writeheader()
+            writer.writerows(all_rows)
+        print(f"Master summary CSV updated: {csv_path}")
+    except PermissionError:
+        print(f"\n[WARNING] Permission denied to write {csv_path}. Is it open in Excel?")
+
+
 # ── Multiprocessing worker ──
 
 def _run_single(args):
@@ -312,6 +436,8 @@ def run_experiment(
                 )
                 pbar.update(1)
             pbar.close()
+            sys.stdout.flush()
+            sys.stderr.flush()
     else:
         # Sequential fallback (1 worker)
         pbar = tqdm(range(runs), desc=f"{algo_name.upper()} F{func_id} D{dimension}")
@@ -322,6 +448,9 @@ def run_experiment(
                 FES=result["fes_used"],
                 fitness=f"{result['last_best_f']:.2e}"
             )
+        pbar.close()
+        sys.stdout.flush()
+        sys.stderr.flush()
 
     total_end = time.time()
     total_time = total_end - total_start
@@ -350,10 +479,31 @@ def run_experiment(
         "Success Rate": (success_count / runs) * 100,
     }
 
+    # ── Print per-run data ──
+    print(f"\n{'─'*80}")
+    print(f"  Per-Run Results: {algo_name.upper()} F{func_id} D{dimension}")
+    print(f"{'─'*80}")
+    print(f"  {'Run':<5} {'F(x)':<22} {'FES Used':<12} {'Time(s)':<10} {'Success'}")
+    print(f"  {'─'*4}  {'─'*20}  {'─'*10}  {'─'*8}  {'─'*7}")
+    for r in results_list:
+        print(f"  {r['run_id']+1:<5} {r['last_best_f']:<22.10e} {r['fes_used']:<12} {r['run_time']:<10.4f} {r['success']}")
+    print(f"{'─'*80}")
+
     # ── Save results with algo-specific paths ──
     save_results(func_id, dimension, stats, total_time, run_times,
                  best_solution, best_solutions, runs, max_fes,
-                 fes_used_list, algo_name=algo_name)
+                 fes_used_list, algo_name=algo_name, best_run_id=best_idx)
+
+    # ── Save per-run detailed CSV and convergence history ──
+    save_per_run_csv(algo_name, func_id, dimension, results_list)
+    save_convergence_csv(algo_name, func_id, dimension, results_list)
+
+    # ── Append best solution to master cross-function summary ──
+    append_to_master_summary_csv(
+        algo_name, func_id, dimension,
+        best_solution, stats['Best Fitness'], f_star
+    )
+
     plot_convergence(all_histories, func_id, dimension, f_star, algo_name=algo_name)
 
     if dimension == 2:

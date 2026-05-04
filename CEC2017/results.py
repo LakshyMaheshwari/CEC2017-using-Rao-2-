@@ -6,7 +6,7 @@ from CEC2017.config import MAX_ITERATIONS
 
 def save_results(func_id, dimension, stats, total_time, run_times,
                  best_solution, best_solutions, runs, max_fes,
-                 fes_used_list, algo_name=None):
+                 fes_used_list, algo_name=None, best_run_id=None):
     """
     Save results in a simplified fitness-based format.
 
@@ -16,6 +16,7 @@ def save_results(func_id, dimension, stats, total_time, run_times,
     runs: number of runs
     max_fes: maximum function evaluations per run
     fes_used_list: list of FES used per run
+    best_run_id: 0-indexed run number that produced the best solution
     """
     if algo_name:
         folder = f"results/{algo_name}/F{func_id}"
@@ -54,7 +55,10 @@ def save_results(func_id, dimension, stats, total_time, run_times,
         solution_path = f"{folder}/{prefix}_D{dimension}_solution.txt"
         with open(solution_path, "w") as f:
             f.write(f"Best solution for F{func_id} D{dimension}:\n")
-            f.write("Decision variables:\n")
+            if best_run_id is not None:
+                f.write(f"Selected from Run\t{best_run_id + 1} (out of {runs})\n")
+            f.write(f"Best Fitness\t{stats['Best Fitness']:.6e}\n")
+            f.write(f"\nDecision variables:\n")
             for i, x in enumerate(best_solution):
                 f.write(f"x{i+1}\t{x:.6e}\n")
         print(f"Best solution saved: {solution_path}")

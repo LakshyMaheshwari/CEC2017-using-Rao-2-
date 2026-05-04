@@ -7,8 +7,8 @@ Ideal	1.000000e+02
 Runs	30
 Max FES	250000
 Iterations	5000
-Total Time	108.28
-Avg Time	35.10
+Total Time	95.00
+Avg Time	31.67
 Success Rate	0.0
 
 Per-run FES used:

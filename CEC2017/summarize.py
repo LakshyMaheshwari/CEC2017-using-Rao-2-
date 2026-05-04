@@ -192,6 +192,8 @@ def build_summary():
 
     for algo in algos:
         for func_id in range(1, 31):
+            if func_id == 2:
+                continue  # F2 is deprecated in CEC2017
             row = [algo, f"F{func_id}"]
 
             for dim in dimensions:
